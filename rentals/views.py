@@ -93,3 +93,39 @@ class PaymentsView(LoginRequiredMixin, TemplateView):
         ]
 
         return context
+
+
+class ReportsView(LoginRequiredMixin, TemplateView):
+    template_name = 'reports.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Reports'
+
+        # Sample Data for Summary Cards
+        context['total_rent_collected'] = 15000
+        context['total_pending_payments'] = 4000
+        context['total_overdue_payments'] = 2000
+        context['number_of_tenants'] = 12
+
+        # Sample Data for Detailed Payments Table
+        context['detailed_payments'] = [
+            {'tenant_name': 'John Doe', 'house_number': '101', 'payment_date': '2025-01-01', 
+             'amount_paid': 1000, 'overdue_amount': 0, 'is_overdue': False, 'payment_method': 'Cash'},
+            {'tenant_name': 'Jane Smith', 'house_number': '102', 'payment_date': '2025-01-05', 
+             'amount_paid': 900, 'overdue_amount': 100, 'is_overdue': True, 'payment_method': 'Bank Transfer'},
+            {'tenant_name': 'Alice Brown', 'house_number': '103', 'payment_date': '2025-01-10', 
+             'amount_paid': 800, 'overdue_amount': 200, 'is_overdue': True, 'payment_method': 'Mobile Payment'},
+        ]
+
+        # Sample Data for House Occupancy Report
+        context['house_occupancy'] = [
+            {'house_number': '101', 'tenant_name': 'John Doe', 'is_occupied': True, 
+             'date_occupied': '2024-12-01', 'date_vacated': None},
+            {'house_number': '102', 'tenant_name': 'Jane Smith', 'is_occupied': True, 
+             'date_occupied': '2024-11-15', 'date_vacated': None},
+            {'house_number': '104', 'tenant_name': None, 'is_occupied': False, 
+             'date_occupied': None, 'date_vacated': '2024-10-01'},
+        ]
+
+        return context
