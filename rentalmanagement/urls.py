@@ -22,5 +22,5 @@ urlpatterns = [
     path('', CustomLoginView.as_view(), name='home'),
     path('admin/', admin.site.urls),
     path('auth/', include('authentication.urls')),  # Authentication app
-    #path('rentals/', include('rentals.urls')),  # Rental Management app
+    path('rentals/', include('rentals.urls', namespace='rentals'))  # Rental Management app
 ]

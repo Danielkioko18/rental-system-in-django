@@ -134,3 +134,6 @@ AUTH_USER_MODEL = 'authentication.User'
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+LOGIN_REDIRECT_URL = 'rentals:dashboard'
+LOGOUT_REDIRECT_URL = 'login'
