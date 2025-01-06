@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <h2 class="mt-4">Settings: House Types and Monthly Rents</h2>
+    </div>
+
+    <!-- Add/Update House Type Form -->
+    <form method="post" class="row g-3 mb-4">
+        {% csrf_token %}
+        <div class="col-md-4">
+            <label for="houseType" class="form-label">House Type</label>
+            <select class="form-select" id="houseType" name="house_type" required>
+                <option value="" disabled selected>Select House Type</option>
+                <option value="Bedsitter">Bedsitter</option>
+                <option value="One Bedroom">One Bedroom</option>
+                <option value="Studio">Studio</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="monthlyRent" class="form-label">Monthly Rent</label>
+            <input type="number" class="form-control" id="monthlyRent" name="monthly_rent" required>
+        </div>
+        <div class="col-md-2 align-self-end">
+            <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+    </form>
+
+    <!-- House Types Table -->
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>House Type</th>
+                    <th>Monthly Rent</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for house_type in house_types %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ house_type.name }}</td>
+                    <td>£{{ house_type.monthly_rent }}</td>
+                    <td>
+                        <a href="#" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="#" class="btn btn-danger btn-sm">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

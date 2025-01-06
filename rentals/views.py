@@ -1,6 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from .models import HouseType
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard.html'
@@ -129,3 +130,26 @@ class ReportsView(LoginRequiredMixin, TemplateView):
         ]
 
         return context
+
+
+
+
+class SettingsView(LoginRequiredMixin, TemplateView):
+    template_name = 'settings.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['house_types'] = HouseType.objects.all()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        house_type_name = request.POST.get('house_type')
+        monthly_rent = request.POST.get('monthly_rent')
+        
+        # Update or create the HouseType entry
+        house_type, created = HouseType.objects.update_or_create(
+            name=house_type_name,
+            defaults={'monthly_rent': monthly_rent}
+        )
+
+        return redirect('rentals:settings')
