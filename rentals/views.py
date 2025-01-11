@@ -1,7 +1,7 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import HouseType
+from .models import HouseType, House
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard.html'
@@ -17,16 +17,33 @@ class HousesView(LoginRequiredMixin, TemplateView):
     template_name = 'houses.html'
 
     def get_context_data(self, **kwargs):
-        # Add houses data to be displayed in the table
         context = super().get_context_data(**kwargs)
-        context['page_title'] = 'Houses'
-        context['houses'] = [
-            {'number': '101', 'is_occupied': True},
-            {'number': '102', 'is_occupied': False},
-            {'number': '103', 'is_occupied': True},
-            {'number': '104', 'is_occupied': False},
-        ]
+        context['houses'] = House.objects.all()  # Fetch all houses
+        context['house_types'] = HouseType.objects.all()  # Fetch all house types
         return context
+
+    def post(self, request, *args, **kwargs):
+        house_id = request.POST.get('house_id')
+        house_number = request.POST.get('house_number')
+        house_type_name = request.POST.get('house_type')
+        monthly_rent = request.POST.get('monthly_rent')
+
+        if house_id:  # Edit operation
+            house = get_object_or_404(House, id=house_id)
+            house.number = house_number
+            house.house_type = house_type_name
+            house.monthly_rent = monthly_rent
+            house.save()
+        else:  # Add operation
+            House.objects.create(
+                number=house_number,
+                house_type=house_type_name,
+                monthly_rent=monthly_rent,
+                is_occupied=False,
+            )
+
+        return redirect('rentals:houses')
+
 
 
 class TenantsView(LoginRequiredMixin, TemplateView):

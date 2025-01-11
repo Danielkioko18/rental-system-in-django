@@ -2,12 +2,37 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="row mb-4">
         <h2 class="mt-4">Houses</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addHouseModal">
-            <i class="fas fa-plus"></i> Add House
-        </button>
     </div>
+
+    <!-- Add/Edit House Form -->
+    <form method="post" class="row g-3 mb-4" id="houseForm">
+        {% csrf_token %}
+        <input type="hidden" name="house_id" id="houseId">
+        <div class="col-md-3">
+            <label for="houseNumber" class="form-label">House Number</label>
+            <input type="text" class="form-control" id="houseNumber" name="house_number" required>
+        </div>
+        <div class="col-md-3">
+            <label for="houseType" class="form-label">House Type</label>
+            <select class="form-select" id="houseType" name="house_type" required>
+                <option value="" disabled selected>Select House Type</option>
+                {% for house_type in house_types %}
+                <option value="{{ house_type.name }}" data-rent="{{ house_type.monthly_rent }}">
+                    {{ house_type.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="monthlyRent" class="form-label">Monthly Rent</label>
+            <input type="number" class="form-control" id="monthlyRent" name="monthly_rent" readonly>
+        </div>
+        <div class="col-md-2 align-self-end">
+            <button type="submit" class="btn btn-primary" id="formSubmitButton">Add House</button>
+        </div>
+    </form>
 
     <div class="table-responsive">
         <table class="table table-striped table-hover">
@@ -15,6 +40,8 @@
                 <tr>
                     <th scope="col">#</th>
                     <th scope="col">House Number</th>
+                    <th scope="col">House Type</th>
+                    <th scope="col">Monthly Rent</th>
                     <th scope="col">Status</th>
                     <th scope="col">Actions</th>
                 </tr>
@@ -24,6 +51,8 @@
                 <tr>
                     <th scope="row">{{ forloop.counter }}</th>
                     <td>{{ house.number }}</td>
+                    <td>{{ house.house_type }}</td>
+                    <td>£{{ house.monthly_rent }}</td>
                     <td>
                         {% if house.is_occupied %}
                         <span class="badge bg-danger">Occupied</span>
@@ -32,7 +61,14 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="#" class="btn btn-warning btn-sm">Edit</a>
+                        <button type="button" 
+                                class="btn btn-warning btn-sm btn-edit" 
+                                data-id="{{ house.id }}" 
+                                data-number="{{ house.number }}" 
+                                data-type="{{ house.house_type }}" 
+                                data-rent="{{ house.monthly_rent }}">
+                            Edit
+                        </button>
                         <a href="#" class="btn btn-danger btn-sm">Delete</a>
                     </td>
                 </tr>
@@ -42,25 +78,31 @@
     </div>
 </div>
 
-<!-- Add House Modal -->
-<div class="modal fade" id="addHouseModal" tabindex="-1" aria-labelledby="addHouseModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addHouseModalLabel">Add House</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="houseNumber" class="form-label">House Number</label>
-                        <input type="text" class="form-control" id="houseNumber" name="house_number" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Add House</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+<script>
+    // Handle "Edit" button click to populate the form
+    document.querySelectorAll('.btn-edit').forEach(button => {
+        button.addEventListener('click', function () {
+            const houseId = this.getAttribute('data-id');
+            const houseNumber = this.getAttribute('data-number');
+            const houseType = this.getAttribute('data-type');
+            const monthlyRent = this.getAttribute('data-rent');
+
+            // Populate the form fields
+            document.getElementById('houseId').value = houseId;
+            document.getElementById('houseNumber').value = houseNumber;
+            document.getElementById('houseType').value = houseType;
+            document.getElementById('monthlyRent').value = monthlyRent;
+
+            // Update form button text
+            document.getElementById('formSubmitButton').textContent = 'Update House';
+        });
+    });
+
+    // Dynamically update monthly rent when house type is changed
+    document.getElementById('houseType').addEventListener('change', function () {
+        const selectedOption = this.options[this.selectedIndex];
+        const rent = selectedOption.getAttribute('data-rent');
+        document.getElementById('monthlyRent').value = rent;
+    });
+</script>
 {% endblock %}
