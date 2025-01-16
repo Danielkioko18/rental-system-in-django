@@ -45,7 +45,7 @@ class HousesView(LoginRequiredMixin, TemplateView):
         return redirect('rentals:houses')
 
 
-
+# views.py
 class TenantsView(LoginRequiredMixin, TemplateView):
     template_name = 'tenants.html'
 
@@ -53,28 +53,104 @@ class TenantsView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'Tenants'
         context['tenants'] = Tenant.objects.all()
-        context['houses'] = House.objects.filter(is_occupied=False)
+        context['houses'] = House.objects.filter(is_occupied=False) | House.objects.filter(
+            tenant__isnull=False)  # Include occupied houses with tenants
         return context
 
     def post(self, request, *args, **kwargs):
+        tenant_id = request.POST.get('tenant_id')
         tenant_name = request.POST.get('tenant_name')
         tenant_phone = request.POST.get('tenant_phone')
         house_number = request.POST.get('house_number')
 
         house = House.objects.get(number=house_number)
-        if house.is_occupied:
-            return redirect('rentals:tenants')  # Handle edge case if house is occupied during submission
 
-        # Create the tenant and update house status
-        tenant = Tenant.objects.create(
-            name=tenant_name,
-            phone=tenant_phone,
-            house=house,
-        )
+        if tenant_id:  # Edit operation
+            tenant = Tenant.objects.get(id=tenant_id)
+            # Free the previously occupied house
+            if tenant.house != house:
+                tenant.house.is_occupied = False
+                tenant.house.save()
+            tenant.name = tenant_name
+            tenant.phone = tenant_phone
+            tenant.house = house
+            tenant.save()
+
+        else:  # Add operation
+            Tenant.objects.create(
+                name=tenant_name,
+                phone=tenant_phone,
+                house=house,
+            )
         house.is_occupied = True
         house.save()
 
         return redirect('rentals:tenants')
+
+    def delete(self, request, *args, **kwargs):
+        tenant_id = request.POST.get('tenant_id')
+        tenant = Tenant.objects.get(id=tenant_id)
+        tenant.house.is_occupied = False
+        tenant.house.save()
+        tenant.delete()
+        return redirect('rentals:tenants')
+
+
+"""# views.py
+class TenantsView(LoginRequiredMixin, TemplateView):
+    template_name = 'tenants.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Tenants'
+        context['tenants'] = Tenant.objects.all()
+        context['houses'] = House.objects.filter(is_occupied=False)  # Default to only vacant houses
+        return context
+
+    def post(self, request, *args, **kwargs):
+        tenant_id = request.POST.get('tenant_id')
+        tenant_name = request.POST.get('tenant_name')
+        tenant_phone = request.POST.get('tenant_phone')
+        house_number = request.POST.get('house_number')
+
+        house = House.objects.get(number=house_number)
+
+        if tenant_id:  # Edit operation
+            tenant = Tenant.objects.get(id=tenant_id)
+            
+            # Change status of the previously occupied house to vacant
+            if tenant.house != house:
+                tenant.house.is_occupied = False
+                tenant.house.save()
+
+            # Update tenant details
+            tenant.name = tenant_name
+            tenant.phone = tenant_phone
+            tenant.house = house
+            tenant.save()
+        else:  # Add operation
+            Tenant.objects.create(
+                name=tenant_name,
+                phone=tenant_phone,
+                house=house,
+            )
+
+        # Mark the newly assigned house as occupied
+        house.is_occupied = True
+        house.save()
+
+        return redirect('rentals:tenants')
+
+    def delete(self, request, *args, **kwargs):
+        tenant_id = request.POST.get('tenant_id')
+        tenant = Tenant.objects.get(id=tenant_id)
+
+        # Free the house associated with the tenant
+        tenant.house.is_occupied = False
+        tenant.house.save()
+
+        tenant.delete()
+        return redirect('rentals:tenants')"""
 
 
 
