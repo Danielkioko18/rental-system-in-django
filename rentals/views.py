@@ -1,3 +1,6 @@
+from datetime import date, timedelta
+from django.db.models import Sum
+from decimal import Decimal
 from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -100,17 +103,64 @@ class PaymentsView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['tenants'] = Tenant.objects.all()
-        context['payments'] = Payment.objects.select_related('tenant', 'tenant__house').all()
+        
+        # Fetch tenants and initialize overdue and credit balances
+        tenants = Tenant.objects.all()
+        for tenant in tenants:
+            tenant.overdue_balance = tenant.overdue_balance or Decimal('0.00')
+            tenant.credit_balance = tenant.credit_balance or Decimal('0.00')
+        context['tenants'] = tenants
+        
+        # Fetch payments
+        payments = Payment.objects.select_related('tenant', 'tenant__house').all()
+        context['payments'] = payments
+
+        # Calculate totals for summary cards
+        context['total_collected'] = payments.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+        context['pending_payments'] = tenants.aggregate(total=Sum('overdue_balance'))['total'] or Decimal('0.00')
+        context['overdue_payments'] = payments.filter(is_overdue=True).count()
+        context['total_credit'] = tenants.aggregate(total=Sum('credit_balance'))['total'] or Decimal('0.00')
+
         return context
 
     def post(self, request, *args, **kwargs):
         tenant_id = request.POST.get('tenant_name')
-        payment_date = request.POST.get('payment_date')
-        amount_paid = request.POST.get('amount_paid')
+        payment_date = date.fromisoformat(request.POST.get('payment_date'))
+        amount_paid = Decimal(request.POST.get('amount_paid'))
         payment_method = request.POST.get('payment_method')
 
         tenant = Tenant.objects.get(id=tenant_id)
+        house = tenant.house
+        monthly_rent = house.monthly_rent
+
+        # Calculate total due
+        total_due = tenant.overdue_balance + monthly_rent - tenant.credit_balance
+
+        # Apply payment
+        if amount_paid >= total_due:
+            # Overpayment case
+            tenant.credit_balance = amount_paid - total_due
+            tenant.overdue_balance = Decimal('0.00')
+            is_overdue = False
+            overdue_amount = Decimal('0.00')
+        else:
+            # Partial payment or payment without overpayment
+            remaining_due = total_due - amount_paid
+            if payment_date > date.today().replace(day=5):
+                # Payment is late
+                tenant.overdue_balance = remaining_due
+                tenant.credit_balance = Decimal('0.00')  # No overpayment
+                is_overdue = True
+                overdue_amount = remaining_due
+            else:
+                # Payment is on time but insufficient
+                tenant.overdue_balance = remaining_due
+                tenant.credit_balance = Decimal('0.00')  # No overpayment
+                is_overdue = remaining_due > 0
+                overdue_amount = remaining_due
+
+        # Save the tenant's updated balances
+        tenant.save()
 
         # Create the payment record
         Payment.objects.create(
@@ -118,7 +168,8 @@ class PaymentsView(LoginRequiredMixin, TemplateView):
             payment_date=payment_date,
             amount_paid=amount_paid,
             payment_method=payment_method,
-            is_overdue=False  # Add logic to calculate overdue if needed
+            is_overdue=is_overdue,
+            overdue_amount=overdue_amount
         )
 
         return redirect('rentals:payments')

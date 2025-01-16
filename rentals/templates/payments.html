@@ -6,6 +6,42 @@
         <h2 class="mt-4">Payments</h2>
     </div>
 
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-success shadow-lg">
+                <div class="card-body">
+                    <h5 class="card-title">Total Payments Collected</h5>
+                    <h2>£{{ total_collected }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning shadow-lg">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Payments</h5>
+                    <h2>£{{ pending_payments }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger shadow-lg">
+                <div class="card-body">
+                    <h5 class="card-title">Overdue Payments</h5>
+                    <h2>{{ overdue_payments }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-primary shadow-lg">
+                <div class="card-body">
+                    <h5 class="card-title">Total Credit Balance</h5>
+                    <h2>£{{ total_credit }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Add Payment Form -->
     <form method="post" id="paymentForm" class="row g-3 mb-4">
         {% csrf_token %}
@@ -15,8 +51,8 @@
             <select class="form-select" id="tenantName" name="tenant_name" required>
                 <option value="" disabled selected>Select Tenant</option>
                 {% for tenant in tenants %}
-                <option value="{{ tenant.id }}" data-house="{{ tenant.house.number }}" data-overdue="{{ tenant.overdue_balance }}">
-                    {{ tenant.name }}
+                <option value="{{ tenant.id }}" data-house="{{ tenant.house.number }}" data-overdue="{{ tenant.overdue_balance }}" data-credit="{{ tenant.credit_balance }}">
+                    {{ tenant.name }} (Credit: £{{ tenant.credit_balance }})
                 </option>
                 {% endfor %}
             </select>
