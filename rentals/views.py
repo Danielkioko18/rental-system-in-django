@@ -1,7 +1,7 @@
 from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import HouseType, House, Tenant
+from .models import HouseType, House, Tenant, Payment
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard.html'
@@ -45,7 +45,6 @@ class HousesView(LoginRequiredMixin, TemplateView):
         return redirect('rentals:houses')
 
 
-# views.py
 class TenantsView(LoginRequiredMixin, TemplateView):
     template_name = 'tenants.html'
 
@@ -96,114 +95,34 @@ class TenantsView(LoginRequiredMixin, TemplateView):
         return redirect('rentals:tenants')
 
 
-"""# views.py
-class TenantsView(LoginRequiredMixin, TemplateView):
-    template_name = 'tenants.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['page_title'] = 'Tenants'
-        context['tenants'] = Tenant.objects.all()
-        context['houses'] = House.objects.filter(is_occupied=False)  # Default to only vacant houses
-        return context
-
-    def post(self, request, *args, **kwargs):
-        tenant_id = request.POST.get('tenant_id')
-        tenant_name = request.POST.get('tenant_name')
-        tenant_phone = request.POST.get('tenant_phone')
-        house_number = request.POST.get('house_number')
-
-        house = House.objects.get(number=house_number)
-
-        if tenant_id:  # Edit operation
-            tenant = Tenant.objects.get(id=tenant_id)
-            
-            # Change status of the previously occupied house to vacant
-            if tenant.house != house:
-                tenant.house.is_occupied = False
-                tenant.house.save()
-
-            # Update tenant details
-            tenant.name = tenant_name
-            tenant.phone = tenant_phone
-            tenant.house = house
-            tenant.save()
-        else:  # Add operation
-            Tenant.objects.create(
-                name=tenant_name,
-                phone=tenant_phone,
-                house=house,
-            )
-
-        # Mark the newly assigned house as occupied
-        house.is_occupied = True
-        house.save()
-
-        return redirect('rentals:tenants')
-
-    def delete(self, request, *args, **kwargs):
-        tenant_id = request.POST.get('tenant_id')
-        tenant = Tenant.objects.get(id=tenant_id)
-
-        # Free the house associated with the tenant
-        tenant.house.is_occupied = False
-        tenant.house.save()
-
-        tenant.delete()
-        return redirect('rentals:tenants')"""
-
-
-
 class PaymentsView(LoginRequiredMixin, TemplateView):
     template_name = 'payments.html'
 
     def get_context_data(self, **kwargs):
-        # Sample data for demonstration purposes
         context = super().get_context_data(**kwargs)
-        context['page_title'] = 'Payments'
-        context['total_collected'] = 5000  # Example total collected amount
-        context['pending_payments'] = 3  # Example count of pending payments
-        context['overdue_payments'] = 2  # Example count of overdue payments
-        
-        # Sample tenants
-        context['tenants'] = [
-            {'id': 1, 'name': 'John Doe'},
-            {'id': 2, 'name': 'Jane Smith'},
-            {'id': 3, 'name': 'Alice Brown'},
-        ]
-
-        # Sample payments
-        context['payments'] = [
-            {
-                'tenant_name': 'John Doe',
-                'house_number': '101',
-                'payment_date': '2025-01-01',
-                'amount_paid': 1000,
-                'payment_method': 'Cash',
-                'overdue_amount': 0,
-                'is_overdue': False,
-            },
-            {
-                'tenant_name': 'Jane Smith',
-                'house_number': '102',
-                'payment_date': '2025-01-10',
-                'amount_paid': 900,
-                'payment_method': 'Bank Transfer',
-                'overdue_amount': 100,
-                'is_overdue': True,
-            },
-            {
-                'tenant_name': 'Alice Brown',
-                'house_number': '103',
-                'payment_date': '2025-01-05',
-                'amount_paid': 800,
-                'payment_method': 'Mobile Payment',
-                'overdue_amount': 200,
-                'is_overdue': True,
-            },
-        ]
-
+        context['tenants'] = Tenant.objects.all()
+        context['payments'] = Payment.objects.select_related('tenant', 'tenant__house').all()
         return context
+
+    def post(self, request, *args, **kwargs):
+        tenant_id = request.POST.get('tenant_name')
+        payment_date = request.POST.get('payment_date')
+        amount_paid = request.POST.get('amount_paid')
+        payment_method = request.POST.get('payment_method')
+
+        tenant = Tenant.objects.get(id=tenant_id)
+
+        # Create the payment record
+        Payment.objects.create(
+            tenant=tenant,
+            payment_date=payment_date,
+            amount_paid=amount_paid,
+            payment_method=payment_method,
+            is_overdue=False  # Add logic to calculate overdue if needed
+        )
+
+        return redirect('rentals:payments')
+
 
 
 class ReportsView(LoginRequiredMixin, TemplateView):
