@@ -1,7 +1,7 @@
 from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import HouseType, House
+from .models import HouseType, House, Tenant
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard.html'
@@ -50,15 +50,32 @@ class TenantsView(LoginRequiredMixin, TemplateView):
     template_name = 'tenants.html'
 
     def get_context_data(self, **kwargs):
-        # Add tenants data to be displayed in the table
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'Tenants'
-        context['tenants'] = [
-            {'name': 'John Doe', 'phone': '123-456-7890', 'house_number': '101', 'date_joined': '2024-01-01'},
-            {'name': 'Jane Smith', 'phone': '987-654-3210', 'house_number': '102', 'date_joined': '2024-02-15'},
-            {'name': 'Alice Brown', 'phone': '555-123-4567', 'house_number': '103', 'date_joined': '2024-03-10'},
-        ]
+        context['tenants'] = Tenant.objects.all()
+        context['houses'] = House.objects.filter(is_occupied=False)
         return context
+
+    def post(self, request, *args, **kwargs):
+        tenant_name = request.POST.get('tenant_name')
+        tenant_phone = request.POST.get('tenant_phone')
+        house_number = request.POST.get('house_number')
+
+        house = House.objects.get(number=house_number)
+        if house.is_occupied:
+            return redirect('rentals:tenants')  # Handle edge case if house is occupied during submission
+
+        # Create the tenant and update house status
+        tenant = Tenant.objects.create(
+            name=tenant_name,
+            phone=tenant_phone,
+            house=house,
+        )
+        house.is_occupied = True
+        house.save()
+
+        return redirect('rentals:tenants')
+
 
 
 class PaymentsView(LoginRequiredMixin, TemplateView):

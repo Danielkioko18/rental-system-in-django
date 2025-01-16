@@ -23,3 +23,13 @@ class House(models.Model):
 
     def __str__(self):
         return f"House {self.number} ({self.house_type})"
+
+
+class Tenant(models.Model):
+    name = models.CharField(max_length=255)
+    phone = models.CharField(max_length=15)
+    house = models.OneToOneField(House, on_delete=models.CASCADE)
+    date_joined = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name

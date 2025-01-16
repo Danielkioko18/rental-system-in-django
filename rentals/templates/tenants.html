@@ -1,3 +1,4 @@
+<!-- tenants.html -->
 {% extends 'base.html' %}
 
 {% block content %}
@@ -7,7 +8,8 @@
     </div>
 
     <!-- Add Tenant Form -->
-    <form class="row g-3 mb-4">
+    <form method="post" class="row g-3 mb-4">
+        {% csrf_token %}
         <div class="col-md-3">
             <label for="tenantName" class="form-label">Name</label>
             <input type="text" class="form-control" id="tenantName" name="tenant_name" required>
@@ -16,7 +18,7 @@
             <label for="tenantPhone" class="form-label">Phone Number</label>
             <input type="text" class="form-control" id="tenantPhone" name="tenant_phone" required>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-3">
             <label for="houseNumber" class="form-label">House Number</label>
             <select class="form-select" id="houseNumber" name="house_number" required>
                 <option value="" disabled selected>Select House</option>
@@ -25,10 +27,6 @@
                 {% endfor %}
             </select>
         </div>
-        <!--<div class="col-md-2">
-            <label for="dateJoined" class="form-label">Date Joined</label>
-            <input type="date" class="form-control" id="dateJoined" name="date_joined" required>
-        </div>-->
         <div class="col-md-2 align-self-end">
             <button type="submit" class="btn btn-primary">Add Tenant</button>
         </div>
@@ -39,21 +37,21 @@
         <table class="table table-striped table-hover">
             <thead class="table-dark">
                 <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Phone Number</th>
-                    <th scope="col">House Number</th>
-                    <th scope="col">Date Joined</th>
-                    <th scope="col">Actions</th>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Phone Number</th>
+                    <th>House Number</th>
+                    <th>Date Joined</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for tenant in tenants %}
                 <tr>
-                    <th scope="row">{{ forloop.counter }}</th>
+                    <td>{{ forloop.counter }}</td>
                     <td>{{ tenant.name }}</td>
                     <td>{{ tenant.phone }}</td>
-                    <td>{{ tenant.house_number }}</td>
+                    <td>{{ tenant.house.number }}</td>
                     <td>{{ tenant.date_joined }}</td>
                     <td>
                         <a href="#" class="btn btn-warning btn-sm">Edit</a>
