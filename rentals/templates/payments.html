@@ -11,7 +11,7 @@
         <div class="col-md-3">
             <div class="card text-white bg-success shadow-lg">
                 <div class="card-body">
-                    <h5 class="card-title">Total Payments Collected</h5>
+                    <h5 class="card-title">Total Amount Collected</h5>
                     <h2>£{{ total_collected }}</h2>
                 </div>
             </div>
@@ -42,7 +42,7 @@
         </div>
     </div>
 
-    <!-- Add Payment Form -->
+    <!-- Add/Edit Payment Form -->
     <form method="post" id="paymentForm" class="row g-3 mb-4">
         {% csrf_token %}
         <input type="hidden" id="paymentId" name="payment_id">
@@ -79,7 +79,7 @@
             </select>
         </div>
         <div class="col-md-1 align-self-end">
-            <button type="submit" class="btn btn-primary">Add Payment</button>
+            <button type="submit" class="btn btn-primary" id="formSubmitButton">Add</button>
         </div>
     </form>
 
@@ -96,6 +96,7 @@
                     <th scope="col">Overdue Balance</th>
                     <th scope="col">Payment Method</th>
                     <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -115,6 +116,18 @@
                         <span class="badge bg-success">Paid</span>
                         {% endif %}
                     </td>
+                    <td>
+                        <button class="btn btn-warning btn-sm btn-edit" 
+                                data-id="{{ payment.id }}" 
+                                data-tenant="{{ payment.tenant.id }}" 
+                                data-payment-date="{{ payment.payment_date }}" 
+                                data-amount="{{ payment.amount_paid }}" 
+                                data-method="{{ payment.payment_method }}">
+                            Edit
+                        </button>
+                        <button class="btn btn-danger btn-sm btn-delete" data-id="{{ payment.id }}">Delete</button>
+                        <!--<button class="btn btn-info btn-sm btn-view" data-id="{{ payment.id }}">View Receipt</button>-->
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -131,6 +144,34 @@
 
         document.getElementById('houseNumber').value = houseNumber;
         document.getElementById('amountPaid').placeholder = `Overdue: £${overdueBalance}`;
+    });
+
+    // Edit Payment Logic
+    document.querySelectorAll('.btn-edit').forEach(button => {
+        button.addEventListener('click', function () {
+            const paymentId = this.dataset.id;
+            const tenantId = this.dataset.tenant;
+            const paymentDate = this.dataset.paymentDate;
+            const amountPaid = this.dataset.amount;
+            const paymentMethod = this.dataset.method;
+
+            document.getElementById('paymentId').value = paymentId;
+            document.getElementById('tenantName').value = tenantId;
+            document.getElementById('paymentDate').value = paymentDate;
+            document.getElementById('amountPaid').value = amountPaid;
+            document.getElementById('paymentMethod').value = paymentMethod;
+
+            document.getElementById('formSubmitButton').textContent = 'Save';
+        });
+    });
+
+    // View Receipt Logic
+    document.querySelectorAll('.btn-view').forEach(button => {
+        button.addEventListener('click', function () {
+            const paymentId = this.dataset.id;
+            // Add logic to fetch and display the receipt (e.g., modal or new window)
+            alert(`Viewing receipt for Payment ID: ${paymentId}`); // Placeholder for receipt logic
+        });
     });
 </script>
 {% endblock %}

@@ -124,6 +124,7 @@ class PaymentsView(LoginRequiredMixin, TemplateView):
         return context
 
     def post(self, request, *args, **kwargs):
+        payment_id = request.POST.get('payment_id')  # Check if editing an existing payment
         tenant_id = request.POST.get('tenant_name')
         payment_date = date.fromisoformat(request.POST.get('payment_date'))
         amount_paid = Decimal(request.POST.get('amount_paid'))
@@ -136,41 +137,73 @@ class PaymentsView(LoginRequiredMixin, TemplateView):
         # Calculate total due
         total_due = tenant.overdue_balance + monthly_rent - tenant.credit_balance
 
-        # Apply payment
-        if amount_paid >= total_due:
-            # Overpayment case
-            tenant.credit_balance = amount_paid - total_due
-            tenant.overdue_balance = Decimal('0.00')
-            is_overdue = False
-            overdue_amount = Decimal('0.00')
-        else:
-            # Partial payment or payment without overpayment
-            remaining_due = total_due - amount_paid
-            if payment_date > date.today().replace(day=5):
-                # Payment is late
-                tenant.overdue_balance = remaining_due
-                tenant.credit_balance = Decimal('0.00')  # No overpayment
-                is_overdue = True
-                overdue_amount = remaining_due
+        if payment_id:
+            # Editing an existing payment
+            payment = Payment.objects.get(id=payment_id)
+
+            # Update tenant balances
+            tenant.overdue_balance += payment.amount_paid  # Reverse previous payment effect
+            tenant.credit_balance -= payment.amount_paid  # Reverse previous credit effect
+
+            # Apply updated payment
+            if amount_paid >= total_due:
+                tenant.credit_balance = amount_paid - total_due
+                tenant.overdue_balance = Decimal('0.00')
+                is_overdue = False
+                overdue_amount = Decimal('0.00')
             else:
-                # Payment is on time but insufficient
-                tenant.overdue_balance = remaining_due
-                tenant.credit_balance = Decimal('0.00')  # No overpayment
-                is_overdue = remaining_due > 0
-                overdue_amount = remaining_due
+                remaining_due = total_due - amount_paid
+                if payment_date > date.today().replace(day=5):
+                    tenant.overdue_balance = remaining_due
+                    tenant.credit_balance = Decimal('0.00')
+                    is_overdue = True
+                    overdue_amount = remaining_due
+                else:
+                    tenant.overdue_balance = remaining_due
+                    tenant.credit_balance = Decimal('0.00')
+                    is_overdue = remaining_due > 0
+                    overdue_amount = remaining_due
+
+            # Save updated payment
+            payment.tenant = tenant
+            payment.payment_date = payment_date
+            payment.amount_paid = amount_paid
+            payment.payment_method = payment_method
+            payment.is_overdue = is_overdue
+            payment.overdue_amount = overdue_amount
+            payment.save()
+        else:
+            # Adding a new payment
+            if amount_paid >= total_due:
+                tenant.credit_balance = amount_paid - total_due
+                tenant.overdue_balance = Decimal('0.00')
+                is_overdue = False
+                overdue_amount = Decimal('0.00')
+            else:
+                remaining_due = total_due - amount_paid
+                if payment_date > date.today().replace(day=5):
+                    tenant.overdue_balance = remaining_due
+                    tenant.credit_balance = Decimal('0.00')  # No overpayment
+                    is_overdue = True
+                    overdue_amount = remaining_due
+                else:
+                    tenant.overdue_balance = remaining_due
+                    tenant.credit_balance = Decimal('0.00')  # No overpayment
+                    is_overdue = remaining_due > 0
+                    overdue_amount = remaining_due
+
+            # Create the payment record
+            Payment.objects.create(
+                tenant=tenant,
+                payment_date=payment_date,
+                amount_paid=amount_paid,
+                payment_method=payment_method,
+                is_overdue=is_overdue,
+                overdue_amount=overdue_amount
+            )
 
         # Save the tenant's updated balances
         tenant.save()
-
-        # Create the payment record
-        Payment.objects.create(
-            tenant=tenant,
-            payment_date=payment_date,
-            amount_paid=amount_paid,
-            payment_method=payment_method,
-            is_overdue=is_overdue,
-            overdue_amount=overdue_amount
-        )
 
         return redirect('rentals:payments')
 
