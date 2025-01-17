@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import DashboardView, HousesView, TenantsView, PaymentsView, ReportsView, SettingsView
+from .views import DashboardView, HousesView, TenantsView, PaymentsView, ReportsView, SettingsView 
 
 app_name = 'rentals'
 

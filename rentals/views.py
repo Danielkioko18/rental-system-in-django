@@ -1,18 +1,38 @@
-from datetime import date, timedelta
-from django.db.models import Sum
+from datetime import date
+from django.db.models import Sum, Count
 from decimal import Decimal
 from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import HouseType, House, Tenant, Payment
+import csv
+from django.http import HttpResponse
+
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        # Fetch data for statistics cards
+        context['total_tenants'] = Tenant.objects.count()
+        context['total_houses'] = House.objects.count()
+        context['vacant_houses'] = House.objects.filter(is_occupied=False).count()
+        context['pending_payments'] = Payment.objects.filter(is_overdue=True).aggregate(total=Sum('overdue_amount'))['total'] or Decimal('0.00')
+        context['total_payments'] = Payment.objects.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+        
+        # Recent Activities (mock data for now, replace with actual query if necessary)
+        context['recent_activities'] = [
+            "Tenant John Doe rented House #5",
+            "Payment received from Jane Smith",
+            "House #8 marked as vacant"
+        ]
+
+        # Page metadata
         context['page_title'] = 'Dashboard'
         context['welcome_message'] = 'Welcome to the Dashboard!'
+
         return context
 
 
@@ -208,42 +228,62 @@ class PaymentsView(LoginRequiredMixin, TemplateView):
         return redirect('rentals:payments')
 
 
-
 class ReportsView(LoginRequiredMixin, TemplateView):
     template_name = 'reports.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['page_title'] = 'Reports'
 
-        # Sample Data for Summary Cards
-        context['total_rent_collected'] = 15000
-        context['total_pending_payments'] = 4000
-        context['total_overdue_payments'] = 2000
-        context['number_of_tenants'] = 12
+        # Filters
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+        view_payment_history = self.request.GET.get('view_payment_history')
 
-        # Sample Data for Detailed Payments Table
-        context['detailed_payments'] = [
-            {'tenant_name': 'John Doe', 'house_number': '101', 'payment_date': '2025-01-01', 
-             'amount_paid': 1000, 'overdue_amount': 0, 'is_overdue': False, 'payment_method': 'Cash'},
-            {'tenant_name': 'Jane Smith', 'house_number': '102', 'payment_date': '2025-01-05', 
-             'amount_paid': 900, 'overdue_amount': 100, 'is_overdue': True, 'payment_method': 'Bank Transfer'},
-            {'tenant_name': 'Alice Brown', 'house_number': '103', 'payment_date': '2025-01-10', 
-             'amount_paid': 800, 'overdue_amount': 200, 'is_overdue': True, 'payment_method': 'Mobile Payment'},
-        ]
+        # Fetch tenants
+        tenants = Tenant.objects.all()
+        context['tenants'] = tenants
 
-        # Sample Data for House Occupancy Report
-        context['house_occupancy'] = [
-            {'house_number': '101', 'tenant_name': 'John Doe', 'is_occupied': True, 
-             'date_occupied': '2024-12-01', 'date_vacated': None},
-            {'house_number': '102', 'tenant_name': 'Jane Smith', 'is_occupied': True, 
-             'date_occupied': '2024-11-15', 'date_vacated': None},
-            {'house_number': '104', 'tenant_name': None, 'is_occupied': False, 
-             'date_occupied': None, 'date_vacated': '2024-10-01'},
-        ]
+        # Filter payments
+        payments = Payment.objects.select_related('tenant', 'tenant__house')
+        if start_date:
+            payments = payments.filter(payment_date__gte=start_date)
+        if end_date:
+            payments = payments.filter(payment_date__lte=end_date)
+
+        # Handle View Payment History
+        if view_payment_history:
+            payments = payments.filter(tenant_id=view_payment_history)
+            context['viewed_tenant'] = Tenant.objects.get(id=view_payment_history)
+
+        context['detailed_payments'] = payments
+
+        # Financial data
+        context['total_rent_collected'] = payments.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+        context['total_pending_payments'] = tenants.aggregate(total=Sum('overdue_balance'))['total'] or Decimal('0.00')
+        context['overdue_payments'] = payments.filter(is_overdue=True).count()
+        context['total_advance_payments'] = tenants.aggregate(total=Sum('credit_balance'))['total'] or Decimal('0.00')
+
+        # Payment methods
+        payment_methods = payments.values('payment_method').annotate(
+            count=Count('id'),
+            total=Sum('amount_paid')
+        )
+        context['payment_methods'] = {
+            method['payment_method']: {
+                'count': method['count'],
+                'total': method['total']
+            }
+            for method in payment_methods
+        }
+
+        # Time-based reports
+        time_based_reports = {}
+        for payment in payments:
+            period = payment.payment_date.strftime('%Y-%m')
+            time_based_reports[period] = time_based_reports.get(period, Decimal('0.00')) + payment.amount_paid
+        context['time_based_reports'] = time_based_reports
 
         return context
-
 
 
 
