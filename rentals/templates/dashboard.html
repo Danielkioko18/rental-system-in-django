@@ -35,7 +35,7 @@
                         <h5 class="card-title">Pending Payments</h5>
                         <h2 class="card-text">{{ pending_payments }}</h2>
                     </div>
-                    <i class="fas fa-exclamation-circle fa-4x"></i>
+                    <i class="fas fa-question-circle fa-4x"></i>
                 </div>
             </div>
         </div>
@@ -114,22 +114,107 @@
         </div>
     </div>
 
-    <!-- Recent Activities Section -->
+    <!-- Summary Charts Section -->
     <div class="row">
-        <div class="col-md-12">
+        <!-- Payment Trends -->
+        <div class="col-md-6 mb-4">
             <div class="card shadow-lg">
-                <div class="card-header bg-dark text-white">
-                    Recent Activities
-                </div>
+                <div class="card-header bg-primary text-white">Payment Trends</div>
                 <div class="card-body">
-                    <ul class="list-group">
-                        <li class="list-group-item">Tenant John Doe rented House #5</li>
-                        <li class="list-group-item">Payment received from Jane Smith</li>
-                        <li class="list-group-item">House #8 marked as vacant</li>
-                    </ul>
+                    <canvas id="paymentTrendsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Method Distribution -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-lg">
+                <div class="card-header bg-success text-white">Payment Method Distribution</div>
+                <div class="card-body">
+                    <canvas id="paymentMethodChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tenant Credit Balances -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-lg">
+                <div class="card-header bg-warning text-white">Tenant Credit Balances</div>
+                <div class="card-body">
+                    <canvas id="tenantCreditChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Status Overview -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-lg">
+                <div class="card-header bg-danger text-white">Payment Status Overview</div>
+                <div class="card-body">
+                    <canvas id="paymentStatusChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // 1. Payment Trends
+    const paymentTrendsCtx = document.getElementById('paymentTrendsChart').getContext('2d');
+    new Chart(paymentTrendsCtx, {
+        type: 'line',
+        data: {
+            labels: {{ payment_trends.months|safe }},
+            datasets: [{
+                label: 'Total Rent Collected',
+                data: {{ payment_trends.totals|safe }},
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.2)',
+                tension: 0.4
+            }]
+        }
+    });
+
+    // 2. Payment Method Distribution
+    const paymentMethodCtx = document.getElementById('paymentMethodChart').getContext('2d');
+    new Chart(paymentMethodCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ payment_method_distribution.labels|safe }},
+            datasets: [{
+                data: {{ payment_method_distribution.values|safe }},
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+            }]
+        }
+    });
+
+    // 3. Tenant Credit Balances
+    const tenantCreditCtx = document.getElementById('tenantCreditChart').getContext('2d');
+    new Chart(tenantCreditCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ tenant_credit_balances.names|safe }},
+            datasets: [{
+                label: 'Credit Balance',
+                data: {{ tenant_credit_balances.balances|safe }},
+                backgroundColor: '#ffc107',
+            }]
+        }
+    });
+
+    // 4. Payment Status Overview
+    const paymentStatusCtx = document.getElementById('paymentStatusChart').getContext('2d');
+    new Chart(paymentStatusCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ payment_status_overview.labels|safe }},
+            datasets: [{
+                data: {{ payment_status_overview.values|safe }},
+                backgroundColor: ['#28a745', '#dc3545'],
+            }]
+        }
+    });
+</script>
 {% endblock %}

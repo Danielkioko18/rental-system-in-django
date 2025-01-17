@@ -5,8 +5,7 @@ from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import HouseType, House, Tenant, Payment
-import csv
-from django.http import HttpResponse
+from django.db.models.functions import TruncMonth
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -30,8 +29,41 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['paid_tenants'] = Tenant.objects.filter(overdue_balance=0).count()
         context['payments_today'] = Payment.objects.filter(payment_date=date.today()).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
 
-        return context
 
+        # Data for charts
+        # 1. Payment Trends
+        monthly_payments = Payment.objects.annotate(month=TruncMonth('payment_date')).values('month').annotate(
+            total=Sum('amount_paid')).order_by('month')
+        context['payment_trends'] = {
+            'months': [data['month'].strftime('%b %Y') for data in monthly_payments],
+            'totals': [float(data['total']) for data in monthly_payments],
+        }
+
+        # 2. Payment Method Distribution
+        payment_methods = Payment.objects.values('payment_method').annotate(
+            count=Count('id')
+        )
+        context['payment_method_distribution'] = {
+            'labels': [method['payment_method'].capitalize() for method in payment_methods],
+            'values': [method['count'] for method in payment_methods],
+        }
+
+        # 3. Tenant Credit Balances
+        top_credit_tenants = Tenant.objects.filter(credit_balance__gt=0).order_by('-credit_balance')[:10]
+        context['tenant_credit_balances'] = {
+            'names': [tenant.name for tenant in top_credit_tenants],
+            'balances': [float(tenant.credit_balance) for tenant in top_credit_tenants],
+        }
+
+        # 4. Payment Status Overview
+        paid_payments = Payment.objects.filter(is_overdue=False).count()
+        overdue_payments = Payment.objects.filter(is_overdue=True).count()
+        context['payment_status_overview'] = {
+            'labels': ['Paid', 'Overdue'],
+            'values': [paid_payments, overdue_payments],
+        }
+
+        return context
 
 
 class HousesView(LoginRequiredMixin, TemplateView):
