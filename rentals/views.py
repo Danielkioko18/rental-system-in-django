@@ -15,25 +15,23 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Fetch data for statistics cards
+        # Original cards
         context['total_tenants'] = Tenant.objects.count()
         context['total_houses'] = House.objects.count()
         context['vacant_houses'] = House.objects.filter(is_occupied=False).count()
         context['pending_payments'] = Payment.objects.filter(is_overdue=True).aggregate(total=Sum('overdue_amount'))['total'] or Decimal('0.00')
         context['total_payments'] = Payment.objects.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
-        
-        # Recent Activities (mock data for now, replace with actual query if necessary)
-        context['recent_activities'] = [
-            "Tenant John Doe rented House #5",
-            "Payment received from Jane Smith",
-            "House #8 marked as vacant"
-        ]
-
-        # Page metadata
-        context['page_title'] = 'Dashboard'
-        context['welcome_message'] = 'Welcome to the Dashboard!'
+        context['overdue_tenants'] = Tenant.objects.filter(overdue_balance__gt=0).count()
+        context['revenue_this_month'] = Payment.objects.filter(
+            payment_date__year=date.today().year,
+            payment_date__month=date.today().month
+        ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+        context['total_credit_balance'] = Tenant.objects.aggregate(total=Sum('credit_balance'))['total'] or Decimal('0.00')
+        context['paid_tenants'] = Tenant.objects.filter(overdue_balance=0).count()
+        context['payments_today'] = Payment.objects.filter(payment_date=date.today()).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
 
         return context
+
 
 
 class HousesView(LoginRequiredMixin, TemplateView):
