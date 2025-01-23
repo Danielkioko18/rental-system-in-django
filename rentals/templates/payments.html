@@ -12,7 +12,7 @@
             <div class="card text-white bg-success shadow-lg">
                 <div class="card-body">
                     <h5 class="card-title">Total Amount Collected</h5>
-                    <h2>£{{ total_collected }}</h2>
+                    <h2>${{ total_collected }}</h2>
                 </div>
             </div>
         </div>
@@ -20,7 +20,7 @@
             <div class="card text-white bg-warning shadow-lg">
                 <div class="card-body">
                     <h5 class="card-title">Pending Payments</h5>
-                    <h2>£{{ pending_payments }}</h2>
+                    <h2>${{ pending_payments }}</h2>
                 </div>
             </div>
         </div>
@@ -36,7 +36,7 @@
             <div class="card text-white bg-primary shadow-lg">
                 <div class="card-body">
                     <h5 class="card-title">Total Credit Balance</h5>
-                    <h2>£{{ total_credit }}</h2>
+                    <h2>${{ total_credit }}</h2>
                 </div>
             </div>
         </div>
@@ -52,7 +52,7 @@
                 <option value="" disabled selected>Select Tenant</option>
                 {% for tenant in tenants %}
                 <option value="{{ tenant.id }}" data-house="{{ tenant.house.number }}" data-overdue="{{ tenant.overdue_balance }}" data-credit="{{ tenant.credit_balance }}">
-                    {{ tenant.name }} (Credit: £{{ tenant.credit_balance }})
+                    {{ tenant.name }} (Credit: ${{ tenant.credit_balance }})
                 </option>
                 {% endfor %}
             </select>
@@ -106,8 +106,8 @@
                     <td>{{ payment.tenant.name }}</td>
                     <td>{{ payment.tenant.house.number }}</td>
                     <td>{{ payment.payment_date }}</td>
-                    <td>£{{ payment.amount_paid }}</td>
-                    <td>£{{ payment.overdue_amount }}</td>
+                    <td>${{ payment.amount_paid }}</td>
+                    <td>${{ payment.overdue_amount }}</td>
                     <td>{{ payment.payment_method }}</td>
                     <td>
                         {% if payment.is_overdue %}
@@ -120,13 +120,21 @@
                         <button class="btn btn-warning btn-sm btn-edit" 
                                 data-id="{{ payment.id }}" 
                                 data-tenant="{{ payment.tenant.id }}" 
-                                data-payment-date="{{ payment.payment_date }}" 
+                                data-payment-date="{{ payment.payment_date|date:'Y-m-d' }}" 
                                 data-amount="{{ payment.amount_paid }}" 
                                 data-method="{{ payment.payment_method }}">
-                            Edit
+                            <i class="fa fa-edit" aria-hidden="true"></i>
                         </button>
-                        <button class="btn btn-danger btn-sm btn-delete" data-id="{{ payment.id }}">Delete</button>
-                        <!--<button class="btn btn-info btn-sm btn-view" data-id="{{ payment.id }}">View Receipt</button>-->
+                        <form action="{% url 'rentals:payments' %}" method="POST" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="payment_id" value="{{ payment.id }}">
+                            <input type="hidden" name="delete_payment" value="1">
+                            <button type="submit" 
+                                    class="btn btn-danger btn-sm" 
+                                    onclick="return confirm('Are you sure you want to delete this payment from {{ payment.tenant.name }}?')">
+                                <i class="fa fa-trash" aria-hidden="true"></i>
+                            </button>
+                        </form>                        
                     </td>
                 </tr>
                 {% endfor %}
@@ -143,7 +151,7 @@
         const overdueBalance = selectedOption.getAttribute('data-overdue');
 
         document.getElementById('houseNumber').value = houseNumber;
-        document.getElementById('amountPaid').placeholder = `Overdue: £${overdueBalance}`;
+        document.getElementById('amountPaid').placeholder = `Overdue: ${overdueBalance}`;
     });
 
     // Edit Payment Logic
@@ -157,6 +165,18 @@
 
             document.getElementById('paymentId').value = paymentId;
             document.getElementById('tenantName').value = tenantId;
+
+            // Ensure the house number for the tenant is displayed
+            const tenantSelect = document.getElementById('tenantName');
+            const selectedTenant = Array.from(tenantSelect.options).find(
+                option => option.value === tenantId
+            );
+            if (selectedTenant) {
+                const houseNumber = selectedTenant.getAttribute('data-house');
+                document.getElementById('houseNumber').value = houseNumber;
+            }
+
+            // Populate other fields
             document.getElementById('paymentDate').value = paymentDate;
             document.getElementById('amountPaid').value = amountPaid;
             document.getElementById('paymentMethod').value = paymentMethod;
@@ -174,4 +194,5 @@
         });
     });
 </script>
+
 {% endblock %}

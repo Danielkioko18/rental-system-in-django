@@ -183,14 +183,14 @@ class PaymentsView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         # Fetch tenants and initialize overdue and credit balances
         tenants = Tenant.objects.all()
         for tenant in tenants:
             tenant.overdue_balance = tenant.overdue_balance or Decimal('0.00')
             tenant.credit_balance = tenant.credit_balance or Decimal('0.00')
         context['tenants'] = tenants
-        
+
         # Fetch payments
         payments = Payment.objects.select_related('tenant', 'tenant__house').all()
         context['payments'] = payments
@@ -204,7 +204,25 @@ class PaymentsView(LoginRequiredMixin, TemplateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        payment_id = request.POST.get('payment_id')  # Check if editing an existing payment
+        # Handle payment deletion
+        if 'delete_payment' in request.POST:
+            payment_id = request.POST.get('payment_id')
+            if payment_id:
+                payment = get_object_or_404(Payment, id=payment_id)
+                tenant = payment.tenant
+
+                # Reverse the effect of the payment on tenant balances
+                #tenant.overdue_balance += payment.amount_paid
+                #tenant.credit_balance -= payment.amount_paid
+                tenant.save()
+
+                # Delete the payment record
+                payment.delete()
+
+            return redirect('rentals:payments')
+
+        # Handle add/edit operations (existing functionality)
+        payment_id = request.POST.get('payment_id')
         tenant_id = request.POST.get('tenant_name')
         payment_date = date.fromisoformat(request.POST.get('payment_date'))
         amount_paid = Decimal(request.POST.get('amount_paid'))
