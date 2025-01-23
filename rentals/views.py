@@ -6,7 +6,8 @@ from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import HouseType, House, Tenant, Payment
 from django.db.models.functions import TruncMonth
-
+from django.contrib import messages
+from django.db import IntegrityError
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard.html'
@@ -106,6 +107,7 @@ class HousesView(LoginRequiredMixin, TemplateView):
 
         return redirect('rentals:houses')
 
+
 class TenantsView(LoginRequiredMixin, TemplateView):
     template_name = 'tenants.html'
 
@@ -124,8 +126,7 @@ class TenantsView(LoginRequiredMixin, TemplateView):
             tenant_id = request.POST.get('tenant_id')
             if tenant_id:
                 tenant = get_object_or_404(Tenant, id=tenant_id)
-                # Set the house status to vacant
-                tenant.house.is_occupied = False
+                tenant.house.is_occupied = False  # Mark the house as vacant
                 tenant.house.save()
                 tenant.delete()
                 return redirect('rentals:tenants')
@@ -136,27 +137,43 @@ class TenantsView(LoginRequiredMixin, TemplateView):
         tenant_phone = request.POST.get('tenant_phone')
         house_number = request.POST.get('house_number')
 
-        house = House.objects.get(number=house_number)
+        house = get_object_or_404(House, number=house_number)
 
         if tenant_id:  # Edit operation
-            tenant = Tenant.objects.get(id=tenant_id)
-            # Free the previously occupied house
+            tenant = get_object_or_404(Tenant, id=tenant_id)
+
+            # Allow staying in the same house without checks
             if tenant.house != house:
+                if house.is_occupied:  # New house is occupied
+                    messages.error(request, f"House {house_number} is already occupied!")
+                    return redirect('rentals:tenants')
+                # Free the old house
                 tenant.house.is_occupied = False
                 tenant.house.save()
+
+            # Update tenant details
             tenant.name = tenant_name
             tenant.phone = tenant_phone
             tenant.house = house
             tenant.save()
 
+            # Mark the new house as occupied
+            house.is_occupied = True
+            house.save()
+
         else:  # Add operation
+            if house.is_occupied:  # Prevent adding a tenant to an occupied house
+                messages.error(request, f"House {house_number} is already occupied!")
+                return redirect('rentals:tenants')
+
+            # Create a new tenant and mark the house as occupied
             Tenant.objects.create(
                 name=tenant_name,
                 phone=tenant_phone,
                 house=house,
             )
-        house.is_occupied = True
-        house.save()
+            house.is_occupied = True
+            house.save()
 
         return redirect('rentals:tenants')
 

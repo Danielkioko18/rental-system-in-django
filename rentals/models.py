@@ -28,7 +28,7 @@ class House(models.Model):
 class Tenant(models.Model):
     name = models.CharField(max_length=255)
     phone = models.CharField(max_length=15)
-    house = models.OneToOneField(House, on_delete=models.CASCADE)
+    house = models.OneToOneField(House, on_delete=models.CASCADE, unique=True)
     overdue_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     credit_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     date_joined = models.DateField(auto_now_add=True)
