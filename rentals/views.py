@@ -106,7 +106,6 @@ class HousesView(LoginRequiredMixin, TemplateView):
 
         return redirect('rentals:houses')
 
-
 class TenantsView(LoginRequiredMixin, TemplateView):
     template_name = 'tenants.html'
 
@@ -115,10 +114,23 @@ class TenantsView(LoginRequiredMixin, TemplateView):
         context['page_title'] = 'Tenants'
         context['tenants'] = Tenant.objects.all()
         context['houses'] = House.objects.filter(is_occupied=False) | House.objects.filter(
-            tenant__isnull=False)  # Include occupied houses with tenants
+            tenant__isnull=False
+        )  # Include occupied houses with tenants
         return context
 
     def post(self, request, *args, **kwargs):
+        # Handle tenant deletion
+        if 'delete_tenant' in request.POST:
+            tenant_id = request.POST.get('tenant_id')
+            if tenant_id:
+                tenant = get_object_or_404(Tenant, id=tenant_id)
+                # Set the house status to vacant
+                tenant.house.is_occupied = False
+                tenant.house.save()
+                tenant.delete()
+                return redirect('rentals:tenants')
+
+        # Handle add/edit operations
         tenant_id = request.POST.get('tenant_id')
         tenant_name = request.POST.get('tenant_name')
         tenant_phone = request.POST.get('tenant_phone')
@@ -146,14 +158,6 @@ class TenantsView(LoginRequiredMixin, TemplateView):
         house.is_occupied = True
         house.save()
 
-        return redirect('rentals:tenants')
-
-    def delete(self, request, *args, **kwargs):
-        tenant_id = request.POST.get('tenant_id')
-        tenant = Tenant.objects.get(id=tenant_id)
-        tenant.house.is_occupied = False
-        tenant.house.save()
-        tenant.delete()
         return redirect('rentals:tenants')
 
 

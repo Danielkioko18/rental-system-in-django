@@ -61,9 +61,18 @@
                                 data-name="{{ tenant.name }}"
                                 data-phone="{{ tenant.phone }}"
                                 data-house="{{ tenant.house.number }}">
-                            Edit
+                            <i class="fa fa-edit" aria-hidden="true"></i>
                         </button>
-                        <button class="btn btn-danger btn-sm btn-delete" data-id="{{ tenant.id }}">Delete</button>
+                        <form action="{% url 'rentals:tenants' %}" method="POST" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="tenant_id" value="{{ tenant.id }}">
+                            <input type="hidden" name="delete_tenant" value="1">
+                            <button type="submit" 
+                                    class="btn btn-danger btn-sm" 
+                                    onclick="return confirm('Are you sure you want to delete {{ tenant.name }} of house number {{ tenant.house.number }}?')">
+                                <i class="fa fa-trash" aria-hidden="true"></i>
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}
