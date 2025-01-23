@@ -67,10 +67,19 @@
                                 data-number="{{ house.number }}" 
                                 data-type="{{ house.house_type }}" 
                                 data-rent="{{ house.monthly_rent }}">
-                            Edit
+                            <i class="fa fa-edit" aria-hidden="true"></i>
                         </button>
-                        <a href="#" class="btn btn-danger btn-sm">Delete</a>
-                    </td>
+                        <form action="{% url 'rentals:houses' %}" method="POST" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="house_id" value="{{ house.id }}">
+                            <input type="hidden" name="delete_house" value="1">
+                            <button type="submit" 
+                                    class="btn btn-danger btn-sm" 
+                                    onclick="return confirm('Are you sure you want to delete house number {{ house.number }}?')">
+                                <i class="fa fa-trash" aria-hidden="true"></i>
+                            </button>
+                        </form>
+                    </td>                    
                 </tr>
                 {% endfor %}
             </tbody>

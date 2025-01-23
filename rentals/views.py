@@ -76,6 +76,15 @@ class HousesView(LoginRequiredMixin, TemplateView):
         return context
 
     def post(self, request, *args, **kwargs):
+        # Handle delete operation
+        if 'delete_house' in request.POST:
+            house_id = request.POST.get('house_id')
+            if house_id:
+                house = get_object_or_404(House, id=house_id)
+                house.delete()
+                return redirect('rentals:houses')
+
+        # Handle add/edit operations
         house_id = request.POST.get('house_id')
         house_number = request.POST.get('house_number')
         house_type_name = request.POST.get('house_type')
