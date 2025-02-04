@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <h2 class="mt-4">Overdue Tenants Report</h2>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Tenant Name</th>
+                    <th>House Number</th>
+                    <th>Outstanding Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tenant in tenants %}
+                {% if tenant.outstanding_balance > 0 %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ tenant.name }}</td>
+                    <td>{{ tenant.house.number }}</td>
+                    <td>£{{ tenant.outstanding_balance }}</td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

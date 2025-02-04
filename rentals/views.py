@@ -219,58 +219,49 @@ class ReportsView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        # Filters
-        start_date = self.request.GET.get('start_date')
-        end_date = self.request.GET.get('end_date')
-        view_payment_history = self.request.GET.get('view_payment_history')
-
-        # Fetch tenants
-        tenants = Tenant.objects.all()
-        context['tenants'] = tenants
-
-        # Filter payments
-        payments = Payment.objects.select_related('tenant', 'tenant__house')
-        if start_date:
-            payments = payments.filter(payment_date__gte=start_date)
-        if end_date:
-            payments = payments.filter(payment_date__lte=end_date)
-
-        # Handle View Payment History
-        if view_payment_history:
-            payments = payments.filter(tenant_id=view_payment_history)
-            context['viewed_tenant'] = Tenant.objects.get(id=view_payment_history)
-
-        context['detailed_payments'] = payments
-
-        # Financial data
-        context['total_rent_collected'] = payments.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
-        context['total_pending_payments'] = tenants.aggregate(total=Sum('overdue_balance'))['total'] or Decimal('0.00')
-        context['overdue_payments'] = payments.filter(is_overdue=True).count()
-        context['total_advance_payments'] = tenants.aggregate(total=Sum('credit_balance'))['total'] or Decimal('0.00')
-
-        # Payment methods
-        payment_methods = payments.values('payment_method').annotate(
-            count=Count('id'),
-            total=Sum('amount_paid')
-        )
-        context['payment_methods'] = {
-            method['payment_method']: {
-                'count': method['count'],
-                'total': method['total']
-            }
-            for method in payment_methods
-        }
-
-        # Time-based reports
-        time_based_reports = {}
-        for payment in payments:
-            period = payment.payment_date.strftime('%Y-%m')
-            time_based_reports[period] = time_based_reports.get(period, Decimal('0.00')) + payment.amount_paid
-        context['time_based_reports'] = time_based_reports
-
         return context
 
+
+class MonthlyReportsView(LoginRequiredMixin, TemplateView):
+    template_name = 'monthly-reports.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['payments'] = Payment.objects.all()
+        return context
+
+
+class CreditBalancesReportView(LoginRequiredMixin, TemplateView):
+    template_name = 'credit-balances-report.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        tenants_with_credit = []
+        
+        for tenant in Tenant.objects.all():
+            total_paid = Payment.objects.filter(tenant=tenant).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+            months_since_joining = (date.today().year - tenant.date_joined.year) * 12 + date.today().month - tenant.date_joined.month
+            total_due = months_since_joining * tenant.house.monthly_rent
+            credit_balance = total_paid - total_due
+            
+            if credit_balance > 0:
+                tenants_with_credit.append({
+                    'name': tenant.name,
+                    'house': tenant.house.number,
+                    'credit_balance': credit_balance
+                })
+        
+        context['tenants'] = tenants_with_credit
+        return context
+
+
+class OverdueRentalsReportView(LoginRequiredMixin, TemplateView):
+    template_name = 'overdue-rentals-report.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tenants'] = [tenant for tenant in Tenant.objects.all() if tenant.outstanding_balance() > 0]
+        return context
 
 
 class SettingsView(LoginRequiredMixin, TemplateView):
