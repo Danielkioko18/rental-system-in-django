@@ -6,42 +6,6 @@
         <h2 class="mt-4">Payments</h2>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-white bg-success shadow-lg">
-                <div class="card-body">
-                    <h5 class="card-title">Total Amount Collected</h5>
-                    <h2>${{ total_collected }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-warning shadow-lg">
-                <div class="card-body">
-                    <h5 class="card-title">Pending Payments</h5>
-                    <h2>${{ pending_payments }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-danger shadow-lg">
-                <div class="card-body">
-                    <h5 class="card-title">Overdue Payments</h5>
-                    <h2>{{ overdue_payments }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-primary shadow-lg">
-                <div class="card-body">
-                    <h5 class="card-title">Total Credit Balance</h5>
-                    <h2>${{ total_credit }}</h2>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Add/Edit Payment Form -->
     <form method="post" id="paymentForm" class="row g-3 mb-4">
         {% csrf_token %}
@@ -51,8 +15,8 @@
             <select class="form-select" id="tenantName" name="tenant_name" required>
                 <option value="" disabled selected>Select Tenant</option>
                 {% for tenant in tenants %}
-                <option value="{{ tenant.id }}" data-house="{{ tenant.house.number }}" data-overdue="{{ tenant.overdue_balance }}" data-credit="{{ tenant.credit_balance }}">
-                    {{ tenant.name }} (Credit: ${{ tenant.credit_balance }})
+                <option value="{{ tenant.id }}" data-house="{{ tenant.house.number }}">
+                    {{ tenant.name }}
                 </option>
                 {% endfor %}
             </select>
@@ -93,9 +57,7 @@
                     <th scope="col">House Number</th>
                     <th scope="col">Payment Date</th>
                     <th scope="col">Amount Paid</th>
-                    <th scope="col">Overdue Balance</th>
                     <th scope="col">Payment Method</th>
-                    <th scope="col">Status</th>
                     <th scope="col">Actions</th>
                 </tr>
             </thead>
@@ -107,15 +69,7 @@
                     <td>{{ payment.tenant.house.number }}</td>
                     <td>{{ payment.payment_date }}</td>
                     <td>${{ payment.amount_paid }}</td>
-                    <td>${{ payment.overdue_amount }}</td>
                     <td>{{ payment.payment_method }}</td>
-                    <td>
-                        {% if payment.is_overdue %}
-                        <span class="badge bg-danger">Overdue</span>
-                        {% else %}
-                        <span class="badge bg-success">Paid</span>
-                        {% endif %}
-                    </td>
                     <td>
                         <button class="btn btn-warning btn-sm btn-edit" 
                                 data-id="{{ payment.id }}" 
@@ -141,19 +95,16 @@
             </tbody>
         </table>
     </div>
+     <!-- Total -->
+     <div class="row mb-4">
+        <div class="col-md-3">
+            <h5 class="card-title">Total Amount Collected</h5>
+            <h2>${{ total_collected }}</h2>
+        </div>
+    </div>
 </div>
 
 <script>
-    // Populate house number and overdue balance when tenant is selected
-    document.getElementById('tenantName').addEventListener('change', function () {
-        const selectedOption = this.options[this.selectedIndex];
-        const houseNumber = selectedOption.getAttribute('data-house');
-        const overdueBalance = selectedOption.getAttribute('data-overdue');
-
-        document.getElementById('houseNumber').value = houseNumber;
-        document.getElementById('amountPaid').placeholder = `Overdue: ${overdueBalance}`;
-    });
-
     // Edit Payment Logic
     document.querySelectorAll('.btn-edit').forEach(button => {
         button.addEventListener('click', function () {
@@ -162,9 +113,6 @@
             const paymentDate = this.dataset.paymentDate;
             const amountPaid = this.dataset.amount;
             const paymentMethod = this.dataset.method;
-
-            document.getElementById('paymentId').value = paymentId;
-            document.getElementById('tenantName').value = tenantId;
 
             // Ensure the house number for the tenant is displayed
             const tenantSelect = document.getElementById('tenantName');
@@ -176,21 +124,13 @@
                 document.getElementById('houseNumber').value = houseNumber;
             }
 
-            // Populate other fields
+            document.getElementById('paymentId').value = paymentId;
+            document.getElementById('tenantName').value = tenantId;
             document.getElementById('paymentDate').value = paymentDate;
             document.getElementById('amountPaid').value = amountPaid;
             document.getElementById('paymentMethod').value = paymentMethod;
 
             document.getElementById('formSubmitButton').textContent = 'Save';
-        });
-    });
-
-    // View Receipt Logic
-    document.querySelectorAll('.btn-view').forEach(button => {
-        button.addEventListener('click', function () {
-            const paymentId = this.dataset.id;
-            // Add logic to fetch and display the receipt (e.g., modal or new window)
-            alert(`Viewing receipt for Payment ID: ${paymentId}`); // Placeholder for receipt logic
         });
     });
 </script>

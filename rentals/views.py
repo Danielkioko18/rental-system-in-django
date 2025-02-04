@@ -113,25 +113,26 @@ class TenantsView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['page_title'] = 'Tenants'
-        context['tenants'] = Tenant.objects.all()
-        context['houses'] = House.objects.filter(is_occupied=False) | House.objects.filter(
-            tenant__isnull=False
-        )  # Include occupied houses with tenants
+        tenants = Tenant.objects.all()
+        
+        for tenant in tenants:
+            tenant.outstanding_balance = tenant.outstanding_balance()  # Use model method
+            tenant.last_payment = tenant.last_payment()  # Use model method
+        
+        context['tenants'] = tenants
+        context['houses'] = House.objects.filter(is_occupied=False) | House.objects.filter(tenant__isnull=False)
         return context
-
+    
     def post(self, request, *args, **kwargs):
-        # Handle tenant deletion
         if 'delete_tenant' in request.POST:
             tenant_id = request.POST.get('tenant_id')
             if tenant_id:
                 tenant = get_object_or_404(Tenant, id=tenant_id)
-                tenant.house.is_occupied = False  # Mark the house as vacant
+                tenant.house.is_occupied = False
                 tenant.house.save()
                 tenant.delete()
                 return redirect('rentals:tenants')
 
-        # Handle add/edit operations
         tenant_id = request.POST.get('tenant_id')
         tenant_name = request.POST.get('tenant_name')
         tenant_phone = request.POST.get('tenant_phone')
@@ -139,39 +140,25 @@ class TenantsView(LoginRequiredMixin, TemplateView):
 
         house = get_object_or_404(House, number=house_number)
 
-        if tenant_id:  # Edit operation
+        if tenant_id:
             tenant = get_object_or_404(Tenant, id=tenant_id)
-
-            # Allow staying in the same house without checks
             if tenant.house != house:
-                if house.is_occupied:  # New house is occupied
+                if house.is_occupied:
                     messages.error(request, f"House {house_number} is already occupied!")
                     return redirect('rentals:tenants')
-                # Free the old house
                 tenant.house.is_occupied = False
                 tenant.house.save()
-
-            # Update tenant details
             tenant.name = tenant_name
             tenant.phone = tenant_phone
             tenant.house = house
             tenant.save()
-
-            # Mark the new house as occupied
             house.is_occupied = True
             house.save()
-
-        else:  # Add operation
-            if house.is_occupied:  # Prevent adding a tenant to an occupied house
+        else:
+            if house.is_occupied:
                 messages.error(request, f"House {house_number} is already occupied!")
                 return redirect('rentals:tenants')
-
-            # Create a new tenant and mark the house as occupied
-            Tenant.objects.create(
-                name=tenant_name,
-                phone=tenant_phone,
-                house=house,
-            )
+            Tenant.objects.create(name=tenant_name, phone=tenant_phone, house=house)
             house.is_occupied = True
             house.save()
 
@@ -183,126 +170,47 @@ class PaymentsView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        # Fetch tenants and initialize overdue and credit balances
         tenants = Tenant.objects.all()
+        
         for tenant in tenants:
-            tenant.overdue_balance = tenant.overdue_balance or Decimal('0.00')
-            tenant.credit_balance = tenant.credit_balance or Decimal('0.00')
+            tenant.outstanding_balance = tenant.outstanding_balance()  # Use model method
+            tenant.last_payment = tenant.last_payment()  # Use model method
+        
         context['tenants'] = tenants
-
-        # Fetch payments
-        payments = Payment.objects.select_related('tenant', 'tenant__house').all()
-        context['payments'] = payments
-
-        # Calculate totals for summary cards
-        context['total_collected'] = payments.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
-        context['pending_payments'] = tenants.aggregate(total=Sum('overdue_balance'))['total'] or Decimal('0.00')
-        context['overdue_payments'] = payments.filter(is_overdue=True).count()
-        context['total_credit'] = tenants.aggregate(total=Sum('credit_balance'))['total'] or Decimal('0.00')
-
+        context['payments'] = Payment.objects.all()
+        context['total_collected'] = Payment.objects.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
         return context
 
     def post(self, request, *args, **kwargs):
-        # Handle payment deletion
         if 'delete_payment' in request.POST:
             payment_id = request.POST.get('payment_id')
             if payment_id:
                 payment = get_object_or_404(Payment, id=payment_id)
-                tenant = payment.tenant
-
-                # Reverse the effect of the payment on tenant balances
-                #tenant.overdue_balance += payment.amount_paid
-                #tenant.credit_balance -= payment.amount_paid
-                tenant.save()
-
-                # Delete the payment record
                 payment.delete()
+                return redirect('rentals:payments')
 
-            return redirect('rentals:payments')
-
-        # Handle add/edit operations (existing functionality)
         payment_id = request.POST.get('payment_id')
         tenant_id = request.POST.get('tenant_name')
         payment_date = date.fromisoformat(request.POST.get('payment_date'))
         amount_paid = Decimal(request.POST.get('amount_paid'))
         payment_method = request.POST.get('payment_method')
 
-        tenant = Tenant.objects.get(id=tenant_id)
-        house = tenant.house
-        monthly_rent = house.monthly_rent
-
-        # Calculate total due
-        total_due = tenant.overdue_balance + monthly_rent - tenant.credit_balance
-
+        tenant = get_object_or_404(Tenant, id=tenant_id)
+        
         if payment_id:
-            # Editing an existing payment
-            payment = Payment.objects.get(id=payment_id)
-
-            # Update tenant balances
-            tenant.overdue_balance += payment.amount_paid  # Reverse previous payment effect
-            tenant.credit_balance -= payment.amount_paid  # Reverse previous credit effect
-
-            # Apply updated payment
-            if amount_paid >= total_due:
-                tenant.credit_balance = amount_paid - total_due
-                tenant.overdue_balance = Decimal('0.00')
-                is_overdue = False
-                overdue_amount = Decimal('0.00')
-            else:
-                remaining_due = total_due - amount_paid
-                if payment_date > date.today().replace(day=5):
-                    tenant.overdue_balance = remaining_due
-                    tenant.credit_balance = Decimal('0.00')
-                    is_overdue = True
-                    overdue_amount = remaining_due
-                else:
-                    tenant.overdue_balance = remaining_due
-                    tenant.credit_balance = Decimal('0.00')
-                    is_overdue = remaining_due > 0
-                    overdue_amount = remaining_due
-
-            # Save updated payment
-            payment.tenant = tenant
+            payment = get_object_or_404(Payment, id=payment_id)
             payment.payment_date = payment_date
             payment.amount_paid = amount_paid
             payment.payment_method = payment_method
-            payment.is_overdue = is_overdue
-            payment.overdue_amount = overdue_amount
             payment.save()
         else:
-            # Adding a new payment
-            if amount_paid >= total_due:
-                tenant.credit_balance = amount_paid - total_due
-                tenant.overdue_balance = Decimal('0.00')
-                is_overdue = False
-                overdue_amount = Decimal('0.00')
-            else:
-                remaining_due = total_due - amount_paid
-                if payment_date > date.today().replace(day=5):
-                    tenant.overdue_balance = remaining_due
-                    tenant.credit_balance = Decimal('0.00')  # No overpayment
-                    is_overdue = True
-                    overdue_amount = remaining_due
-                else:
-                    tenant.overdue_balance = remaining_due
-                    tenant.credit_balance = Decimal('0.00')  # No overpayment
-                    is_overdue = remaining_due > 0
-                    overdue_amount = remaining_due
-
-            # Create the payment record
             Payment.objects.create(
                 tenant=tenant,
                 payment_date=payment_date,
                 amount_paid=amount_paid,
-                payment_method=payment_method,
-                is_overdue=is_overdue,
-                overdue_amount=overdue_amount
+                payment_method=payment_method
             )
-
-        # Save the tenant's updated balances
-        tenant.save()
-
+        
         return redirect('rentals:payments')
 
 

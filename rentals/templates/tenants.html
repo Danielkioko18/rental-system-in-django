@@ -50,8 +50,8 @@
                     <th>Name</th>
                     <th>Phone Number</th>
                     <th>House Number</th>
-                    <th>Date Joined</th>
-                    <th>Overdue Balance</th>
+                    <th>Outstanding Balance</th>
+                    <th>Last Payment</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -62,8 +62,8 @@
                     <td>{{ tenant.name }}</td>
                     <td>{{ tenant.phone }}</td>
                     <td>{{ tenant.house.number }}</td>
-                    <td>{{ tenant.date_joined }}</td>
-                    <td>${{ tenant.overdue_balance }}</td>
+                    <td>${{ tenant.outstanding_balance }}</td>
+                    <td>{{ tenant.last_payment }}</td>
                     <td>
                         <button class="btn btn-warning btn-sm btn-edit" 
                                 data-id="{{ tenant.id }}"
@@ -107,27 +107,6 @@
             document.getElementById('formSubmitButton').textContent = 'Update Tenant';
         });
     });
-
-    // Delete Tenant Logic
-    document.querySelectorAll('.btn-delete').forEach(button => {
-        button.addEventListener('click', function () {
-            if (confirm("Are you sure you want to delete this tenant?")) {
-                const tenantId = this.dataset.id;
-
-                fetch("", {
-                    method: "DELETE",
-                    headers: {
-                        "X-CSRFToken": "{{ csrf_token }}",
-                    },
-                    body: new URLSearchParams({ tenant_id: tenantId })
-                })
-                .then(response => {
-                    if (response.ok) {
-                        location.reload();
-                    }
-                });
-            }
-        });
-    });
 </script>
+
 {% endblock %}
