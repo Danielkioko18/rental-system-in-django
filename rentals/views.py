@@ -350,6 +350,7 @@ class CreditBalancesReportView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         tenants_with_credit = []
+        total_credit_balance = Decimal('0.00')  # Initialize total credit balance
         
         for tenant in Tenant.objects.all():
             total_paid = Payment.objects.filter(tenant=tenant).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
@@ -357,14 +358,20 @@ class CreditBalancesReportView(LoginRequiredMixin, TemplateView):
             total_due = months_since_joining * tenant.house.monthly_rent
             credit_balance = total_paid - total_due
             
+            # Only include tenants with a positive credit balance
             if credit_balance > 0:
                 tenants_with_credit.append({
                     'name': tenant.name,
                     'house': tenant.house.number,
                     'credit_balance': credit_balance
                 })
-        
+                
+                # Accumulate the total credit balance
+                total_credit_balance += credit_balance
+
+        # Add tenants and total credit balance to the context
         context['tenants'] = tenants_with_credit
+        context['total_credit_balance'] = total_credit_balance
         return context
 
 

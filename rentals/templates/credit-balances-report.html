@@ -1,34 +1,34 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row mb-4">
-        <h2 class="mt-4">Credit Balances Report</h2>
-    </div>
+  <div class="container">
+    <h1 class="my-4">Credit Balances Report</h1>
 
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th>#</th>
-                    <th>Tenant Name</th>
-                    <th>House Number</th>
-                    <th>Credit Balance</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for tenant in tenants %}
-                {% if tenant.credit_balance > 0 %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ tenant.name }}</td>
-                    <td>{{ tenant.house }}</td>
-                    <td>£{{ tenant.credit_balance }}</td>
-                </tr>
-                {% endif %}
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+    <!-- Display Total Credit Balance -->
+    <p><strong>Total Credit Balance: </strong>${{ total_credit_balance }}</p>
+
+    <!-- Tenants Table -->
+    <table class="table table-striped table-bordered mt-4">
+      <thead class="table-dark">
+        <tr>
+          <th>Tenant Name</th>
+          <th>House Number</th>
+          <th>Credit Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tenant in tenants %}
+          <tr>
+            <td>{{ tenant.name }}</td>
+            <td>{{ tenant.house }}</td>
+            <td>${{ tenant.credit_balance }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="3" class="text-center">No tenants with a positive credit balance.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 {% endblock %}
