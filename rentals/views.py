@@ -380,8 +380,27 @@ class OverdueRentalsReportView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['tenants'] = [tenant for tenant in Tenant.objects.all() if tenant.outstanding_balance() > 0]
+        
+        # Get all tenants with an outstanding balance
+        tenants_with_outstanding_balance = []
+        total_overdue_balance = Decimal('0.00')  # Initialize total overdue balance
+
+        for tenant in Tenant.objects.all():
+            outstanding_balance = tenant.outstanding_balance()  # Assuming this method exists on the Tenant model
+            if outstanding_balance > 0:
+                tenants_with_outstanding_balance.append({
+                    'name': tenant.name,
+                    'house': tenant.house.number,
+                    'outstanding_balance': outstanding_balance
+                })
+                total_overdue_balance += outstanding_balance  # Add to total overdue balance
+
+        # Add the tenants and total overdue balance to the context
+        context['tenants'] = tenants_with_outstanding_balance
+        context['total_overdue_balance'] = total_overdue_balance
+        
         return context
+
 
 
 class SettingsView(LoginRequiredMixin, TemplateView):
