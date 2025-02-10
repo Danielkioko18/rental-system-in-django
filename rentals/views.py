@@ -1,4 +1,5 @@
 from datetime import date
+from django.utils.dateparse import parse_date
 from django.db.models import Sum, Count
 from decimal import Decimal
 from django.shortcuts import redirect, get_object_or_404
@@ -227,8 +228,33 @@ class MonthlyReportsView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['payments'] = Payment.objects.all()
+
+        # Get the month and year parameters from the GET request
+        month = self.request.GET.get('month')
+        year = self.request.GET.get('year')
+
+        # If no month or year is provided, default to current month and year
+        if not month or not year:
+            month = str(date.today().month).zfill(2)
+            year = str(date.today().year)
+
+        # Construct the date range for the selected month and year
+        start_date = f"{year}-{month}-01"
+        end_date = f"{year}-{month}-{date(year=int(year), month=int(month), day=1).replace(day=28).strftime('%d')}"
+
+        # Filter payments within the range of the selected month and year
+        payments = Payment.objects.filter(payment_date__gte=start_date, payment_date__lte=end_date)
+
+        # Calculate the total payments for the month
+        total_collected = payments.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+
+        context['payments'] = payments
+        context['total_collected'] = total_collected
+        context['month'] = month
+        context['year'] = year
+
         return context
+
 
 
 class CreditBalancesReportView(LoginRequiredMixin, TemplateView):
