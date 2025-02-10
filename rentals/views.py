@@ -7,8 +7,14 @@ from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import HouseType, House, Tenant, Payment
 from django.db.models.functions import TruncMonth
+from django.template.loader import render_to_string
 from django.contrib import messages
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.pdfgen import canvas
 from django.db import IntegrityError
+
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard.html'
@@ -255,6 +261,87 @@ class MonthlyReportsView(LoginRequiredMixin, TemplateView):
 
         return context
 
+    def get(self, request, *args, **kwargs):
+        # If the 'generate_pdf' GET parameter is provided, generate the PDF
+        if 'generate_pdf' in request.GET:
+            return self.generate_pdf_report(request)
+        return super().get(request, *args, **kwargs)
+
+    def generate_pdf_report(self, request):
+        # Get the month and year parameters from the GET request
+        month = request.GET.get('month')
+        year = request.GET.get('year')
+
+        # Construct the date range for the selected month and year
+        start_date = f"{year}-{month}-01"
+        end_date = f"{year}-{month}-{date(year=int(year), month=int(month), day=1).replace(day=28).strftime('%d')}"
+
+        # Filter payments within the range of the selected month and year
+        payments = Payment.objects.filter(payment_date__gte=start_date, payment_date__lte=end_date)
+
+        # Calculate the total payments for the month
+        total_collected = payments.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+
+        # Render the template to HTML for PDF generation
+        html_string = render_to_string('monthly-reports.html', {
+            'payments': payments,
+            'month': month,
+            'year': year,
+            'total_collected': total_collected,
+        })
+
+        # Create the HTTP response with PDF content type
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="monthly_payment_report_{month}_{year}.pdf"'
+
+        # Create the PDF using ReportLab
+        p = canvas.Canvas(response, pagesize=letter)
+
+        # Add Title
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(200, 750, f"Monthly Payment Report for {month}/{year}")
+
+        # Total Collected Amount
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(50, 730, f"Total Collected: ${total_collected}")
+
+        # Table Header
+        p.setFont("Helvetica-Bold", 10)
+        p.drawString(50, 700, "#")
+        p.drawString(100, 700, "Tenant Name")
+        p.drawString(200, 700, "House No.")
+        p.drawString(300, 700, "Payment Date")
+        p.drawString(400, 700, "Amount Paid")
+        p.drawString(500, 700, "Payment Method")
+
+        # Table Rows
+        y_position = 680
+        p.setFont("Helvetica", 10)
+
+        serial_number = 1  # Start serial No
+        for payment in payments:
+            p.drawString(50, y_position, str(serial_number))
+            p.drawString(100, y_position, payment.tenant.name)
+            p.drawString(200, y_position, payment.tenant.house.number)
+            p.drawString(300, y_position, str(payment.payment_date))
+            p.drawString(400, y_position, f"£{payment.amount_paid}")
+            p.drawString(500, y_position, payment.payment_method)
+            y_position -= 20
+                   
+            # Increment serial number for each row
+            serial_number += 1
+
+
+            # Avoid overflow of table rows
+            if y_position < 40:
+                p.showPage()  # Create a new page
+                y_position = 750  # Reset y_position for the new page
+
+        # Save the PDF
+        p.showPage()
+        p.save()
+
+        return response
 
 
 class CreditBalancesReportView(LoginRequiredMixin, TemplateView):
