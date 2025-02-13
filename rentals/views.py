@@ -26,14 +26,23 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['total_tenants'] = Tenant.objects.count()
         context['total_houses'] = House.objects.count()
         context['vacant_houses'] = House.objects.filter(is_occupied=False).count()
-        context['pending_payments'] = Payment.objects.filter(is_overdue=True).aggregate(total=Sum('overdue_amount'))['total'] or Decimal('0.00')
+        context['pending_payments'] = sum(tenant.outstanding_balance() for tenant in Tenant.objects.all() 
+                                        if tenant.outstanding_balance() > 0
+                                    )
+        
         context['total_payments'] = Payment.objects.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
-        context['overdue_tenants'] = Tenant.objects.filter(overdue_balance__gt=0).count()
+        
+        context['overdue_tenants'] = sum(
+            1 for tenant in Tenant.objects.all() 
+            if tenant.outstanding_balance() > 0
+        )
         context['revenue_this_month'] = Payment.objects.filter(
             payment_date__year=date.today().year,
             payment_date__month=date.today().month
         ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
-        context['total_credit_balance'] = Tenant.objects.aggregate(total=Sum('credit_balance'))['total'] or Decimal('0.00')
+
+        context['total_credit_balance'] = CreditBalancesReportView.total_credit_balance
+        '''
         context['paid_tenants'] = Tenant.objects.filter(overdue_balance=0).count()
         context['payments_today'] = Payment.objects.filter(payment_date=date.today()).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
 
@@ -69,7 +78,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['payment_status_overview'] = {
             'labels': ['Paid', 'Overdue'],
             'values': [paid_payments, overdue_payments],
-        }
+        }'''
 
         return context
 
@@ -371,7 +380,7 @@ class CreditBalancesReportView(LoginRequiredMixin, TemplateView):
 
         # Add tenants and total credit balance to the context
         context['tenants'] = tenants_with_credit
-        context['total_credit_balance'] = total_credit_balance
+        context['total_credit_balance'] = self.total_credit_balance
         return context
 
 
@@ -422,3 +431,5 @@ class SettingsView(LoginRequiredMixin, TemplateView):
         )
 
         return redirect('rentals:settings')
+
+#https://chatgpt.com/share/67aa0987-fa58-8006-8370-b95438b22a66
