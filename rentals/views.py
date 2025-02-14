@@ -41,12 +41,10 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             payment_date__month=date.today().month
         ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
 
-        context['total_credit_balance'] = CreditBalancesReportView.total_credit_balance
-        '''
-        context['paid_tenants'] = Tenant.objects.filter(overdue_balance=0).count()
+          # Get total credit balance from CreditBalancesReportView
+        context['total_credit_balance'] = CreditBalancesReportView.get_total_credit_balance()
+
         context['payments_today'] = Payment.objects.filter(payment_date=date.today()).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
-
-
         # Data for charts
         # 1. Payment Trends
         monthly_payments = Payment.objects.annotate(month=TruncMonth('payment_date')).values('month').annotate(
@@ -64,6 +62,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             'labels': [method['payment_method'].capitalize() for method in payment_methods],
             'values': [method['count'] for method in payment_methods],
         }
+        '''
 
         # 3. Tenant Credit Balances
         top_credit_tenants = Tenant.objects.filter(credit_balance__gt=0).order_by('-credit_balance')[:10]
@@ -333,7 +332,7 @@ class MonthlyReportsView(LoginRequiredMixin, TemplateView):
             p.drawString(100, y_position, payment.tenant.name)
             p.drawString(200, y_position, payment.tenant.house.number)
             p.drawString(300, y_position, str(payment.payment_date))
-            p.drawString(400, y_position, f"£{payment.amount_paid}")
+            p.drawString(400, y_position, f"${payment.amount_paid}")
             p.drawString(500, y_position, payment.payment_method)
             y_position -= 20
                    
@@ -342,7 +341,7 @@ class MonthlyReportsView(LoginRequiredMixin, TemplateView):
 
 
             # Avoid overflow of table rows
-            if y_position < 40:
+            if y_position < 40: 
                 p.showPage()  # Create a new page
                 y_position = 750  # Reset y_position for the new page
 
@@ -356,32 +355,25 @@ class MonthlyReportsView(LoginRequiredMixin, TemplateView):
 class CreditBalancesReportView(LoginRequiredMixin, TemplateView):
     template_name = 'credit-balances-report.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        tenants_with_credit = []
-        total_credit_balance = Decimal('0.00')  # Initialize total credit balance
-        
+    @classmethod
+    def get_total_credit_balance(cls):
+        total_credit_balance = Decimal('0.00')
         for tenant in Tenant.objects.all():
             total_paid = Payment.objects.filter(tenant=tenant).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
             months_since_joining = (date.today().year - tenant.date_joined.year) * 12 + date.today().month - tenant.date_joined.month
             total_due = months_since_joining * tenant.house.monthly_rent
             credit_balance = total_paid - total_due
-            
-            # Only include tenants with a positive credit balance
+
             if credit_balance > 0:
-                tenants_with_credit.append({
-                    'name': tenant.name,
-                    'house': tenant.house.number,
-                    'credit_balance': credit_balance
-                })
-                
-                # Accumulate the total credit balance
                 total_credit_balance += credit_balance
 
-        # Add tenants and total credit balance to the context
-        context['tenants'] = tenants_with_credit
-        context['total_credit_balance'] = self.total_credit_balance
+        return total_credit_balance
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['total_credit_balance'] = self.get_total_credit_balance()
         return context
+
 
 
 class OverdueRentalsReportView(LoginRequiredMixin, TemplateView):
