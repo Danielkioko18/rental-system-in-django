@@ -352,12 +352,21 @@ class MonthlyReportsView(LoginRequiredMixin, TemplateView):
         return response
 
 
+from django.db.models import Sum
+from datetime import date
+from decimal import Decimal
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .models import Tenant, Payment  # Ensure correct import paths
+
 class CreditBalancesReportView(LoginRequiredMixin, TemplateView):
     template_name = 'credit-balances-report.html'
 
     @classmethod
     def get_total_credit_balance(cls):
         total_credit_balance = Decimal('0.00')
+        tenants_with_credit = []  # List to store tenants with credit balances
+
         for tenant in Tenant.objects.all():
             total_paid = Payment.objects.filter(tenant=tenant).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
             months_since_joining = (date.today().year - tenant.date_joined.year) * 12 + date.today().month - tenant.date_joined.month
@@ -366,13 +375,21 @@ class CreditBalancesReportView(LoginRequiredMixin, TemplateView):
 
             if credit_balance > 0:
                 total_credit_balance += credit_balance
+                tenants_with_credit.append({
+                    'name': tenant.name,
+                    'house': tenant.house.number,
+                    'credit_balance': credit_balance
+                })
 
-        return total_credit_balance
+        return total_credit_balance, tenants_with_credit  # Return both total balance and list of tenants
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['total_credit_balance'] = self.get_total_credit_balance()
+        total_credit_balance, tenants_with_credit = self.get_total_credit_balance()  # Call the method
+        context['total_credit_balance'] = total_credit_balance  # Add total balance to context
+        context['tenants'] = tenants_with_credit  # Add list of tenants to context
         return context
+
 
 
 
@@ -387,7 +404,7 @@ class OverdueRentalsReportView(LoginRequiredMixin, TemplateView):
         total_overdue_balance = Decimal('0.00')  # Initialize total overdue balance
 
         for tenant in Tenant.objects.all():
-            outstanding_balance = tenant.outstanding_balance()  # Assuming this method exists on the Tenant model
+            outstanding_balance = tenant.outstanding_balance()
             if outstanding_balance > 0:
                 tenants_with_outstanding_balance.append({
                     'name': tenant.name,
