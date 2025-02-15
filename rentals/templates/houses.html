@@ -52,7 +52,7 @@
                     <th scope="row">{{ forloop.counter }}</th>
                     <td>{{ house.number }}</td>
                     <td>{{ house.house_type }}</td>
-                    <td>£{{ house.monthly_rent }}</td>
+                    <td>${{ house.monthly_rent }}</td>
                     <td>
                         {% if house.is_occupied %}
                         <span class="badge bg-danger">Occupied</span>

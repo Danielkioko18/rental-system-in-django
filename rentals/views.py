@@ -135,6 +135,7 @@ class TenantsView(LoginRequiredMixin, TemplateView):
             tenant.last_payment = tenant.last_payment()  # Use model method
         
         context['tenants'] = tenants
+        context['total_tenants']=Tenant.objects.all().count()
         context['houses'] = House.objects.filter(is_occupied=False) | House.objects.filter(tenant__isnull=False)
         return context
     
