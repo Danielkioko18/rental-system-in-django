@@ -42,7 +42,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
 
           # Get total credit balance from CreditBalancesReportView
-        context['total_credit_balance'] = CreditBalancesReportView.get_total_credit_balance()
+        context['total_credit_balance'] = CreditBalancesReportView.get_total_credit_balance()[0]
 
         context['payments_today'] = Payment.objects.filter(payment_date=date.today()).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
         # Data for charts
@@ -351,13 +351,6 @@ class MonthlyReportsView(LoginRequiredMixin, TemplateView):
 
         return response
 
-
-from django.db.models import Sum
-from datetime import date
-from decimal import Decimal
-from django.views.generic import TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import Tenant, Payment  # Ensure correct import paths
 
 class CreditBalancesReportView(LoginRequiredMixin, TemplateView):
     template_name = 'credit-balances-report.html'

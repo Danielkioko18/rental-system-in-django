@@ -39,10 +39,10 @@
     <!-- PDF Export Button -->
     <a href="?month={{ month }}&year={{ year }}&generate_pdf=true" class="btn btn-success mb-4" style="float: right;">Print</a>
 
-    <h3>Report for {{ month }}/{{ year }}</h3>
+    <h3 class="text-success">Report for <strong>{{ month }}/{{ year }}</strong></h3>
 
     <!-- Display Total Amount Collected -->
-    <p><strong>Total Amount Collected: </strong>${{ total_collected }}</p>
+    <h5>Total Amount Collected:<strong class="text-success"> ${{ total_collected }}</strong></h5>
 
     <!-- Payment Details Table -->
     <table class="table table-striped table-bordered mt-4">
