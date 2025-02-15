@@ -62,10 +62,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             'labels': [method['payment_method'].capitalize() for method in payment_methods],
             'values': [method['count'] for method in payment_methods],
         }
-        '''
 
-        # 3. Tenant Credit Balances
-        top_credit_tenants = Tenant.objects.filter(credit_balance__gt=0).order_by('-credit_balance')[:10]
+        '''# 3. Tenant Credit Balances
+        top_credit_tenants = CreditBalancesReportView.get_total_credit_balance.().order_by('-credit_balance')[:10]
         context['tenant_credit_balances'] = {
             'names': [tenant.name for tenant in top_credit_tenants],
             'balances': [float(tenant.credit_balance) for tenant in top_credit_tenants],
@@ -77,8 +76,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['payment_status_overview'] = {
             'labels': ['Paid', 'Overdue'],
             'values': [paid_payments, overdue_payments],
-        }'''
+        }
 
+        '''
         return context
 
 
@@ -423,5 +423,3 @@ class SettingsView(LoginRequiredMixin, TemplateView):
         )
 
         return redirect('rentals:settings')
-
-#https://chatgpt.com/share/67aa0987-fa58-8006-8370-b95438b22a66
