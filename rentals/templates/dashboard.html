@@ -4,7 +4,7 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Original Statistics Cards -->
-        <div class="col-md-4 mb-4">
+        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:tenants' %}'">
             <div class="card text-white bg-primary shadow-lg" style="height: 150px;">
                 <div class="card-body d-flex align-items-center justify-content-between">
                     <div>
@@ -16,7 +16,7 @@
             </div>
         </div>
 
-        <div class="col-md-4 mb-4">
+        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:houses' %}'">
             <div class="card text-white bg-warning shadow-lg" style="height: 150px;">
                 <div class="card-body d-flex align-items-center justify-content-between">
                     <div>
@@ -28,11 +28,11 @@
             </div>
         </div>
 
-        <div class="col-md-4 mb-4">
+        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:overdue-rentals-report' %}'">
             <div class="card text-white bg-danger shadow-lg" style="height: 150px;">
                 <div class="card-body d-flex align-items-center justify-content-between">
                     <div>
-                        <h5 class="card-title">Pending Payments</h5>
+                        <h5 class="card-title">Total Pending Amount</h5>
                         <h2 class="card-text">${{ pending_payments }}</h2>
                     </div>
                     <i class="fas fa-question-circle fa-4x"></i>
@@ -40,7 +40,7 @@
             </div>
         </div>
 
-        <div class="col-md-4 mb-4">
+        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:payments' %}'">
             <div class="card text-white bg-info shadow-lg" style="height: 150px;">
                 <div class="card-body d-flex align-items-center justify-content-between">
                     <div>
@@ -52,12 +52,11 @@
             </div>
         </div>
 
-        <!-- New Cards -->
-        <div class="col-md-4 mb-4">
+        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:overdue-rentals-report' %}'">
             <div class="card text-white bg-danger shadow-lg" style="height: 150px;">
                 <div class="card-body d-flex align-items-center justify-content-between">
                     <div>
-                        <h5 class="card-title">Overdue Tenants</h5>
+                        <h5 class="card-title">Pending Payment</h5>
                         <h2 class="card-text">{{ overdue_tenants }}</h2>
                     </div>
                     <i class="fas fa-exclamation-circle fa-4x"></i>
@@ -65,7 +64,7 @@
             </div>
         </div>
 
-        <div class="col-md-4 mb-4">
+        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:monthly-reports' %}'">
             <div class="card text-white bg-info shadow-lg" style="height: 150px;">
                 <div class="card-body d-flex align-items-center justify-content-between">
                     <div>
@@ -77,7 +76,7 @@
             </div>
         </div>
 
-        <div class="col-md-4 mb-4">
+        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:tenants' %}'">
             <div class="card text-white bg-secondary shadow-lg" style="height: 150px;">
                 <div class="card-body d-flex align-items-center justify-content-between">
                     <div>
@@ -89,7 +88,7 @@
             </div>
         </div>
         
-        <div class="col-md-4 mb-4">
+        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:payments' %}'">
             <div class="card text-white bg-success shadow-lg" style="height: 150px;">
                 <div class="card-body d-flex align-items-center justify-content-between">
                     <div>
