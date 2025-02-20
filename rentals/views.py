@@ -65,6 +65,16 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             'balances': [float(tenant['credit_balance']) for tenant in top_credit_tenants],
         }
 
+         # 4. Payment Status Overview (Corrected)
+        tenants = Tenant.objects.all()
+        outstanding_balance_count = sum(1 for tenant in tenants if tenant.outstanding_balance() > 0)
+        no_outstanding_balance_count = len(tenants) - outstanding_balance_count
+
+        context['payment_status_overview'] = {
+            'labels': ['Outstanding Balance', 'No Outstanding Balance'],
+            'values': [outstanding_balance_count, no_outstanding_balance_count],
+        }
+
 
         return context
 
