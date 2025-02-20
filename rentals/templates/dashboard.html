@@ -3,7 +3,6 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row">
-        <!-- Original Statistics Cards -->
         <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:tenants' %}'">
             <div class="card text-white bg-primary shadow-lg" style="height: 150px; cursor: pointer;">
                 <div class="card-body d-flex align-items-center justify-content-between">
@@ -16,192 +15,110 @@
             </div>
         </div>
 
-        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:houses' %}'">
-            <div class="card text-white bg-warning shadow-lg" style="height: 150px; cursor: pointer;">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                    <div>
-                        <h5 class="card-title">Vacant Houses</h5>
-                        <h2 class="card-text">{{ vacant_houses }}</h2>
-                    </div>
-                    <i class="fas fa-door-open fa-4x"></i>
-                </div>
-            </div>
         </div>
 
-        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:overdue-rentals-report' %}'">
-            <div class="card text-white bg-danger shadow-lg" style="height: 150px; cursor: pointer;">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                    <div>
-                        <h5 class="card-title">Total Pending Amount</h5>
-                        <h2 class="card-text">${{ pending_payments }}</h2>
-                    </div>
-                    <i class="fas fa-question-circle fa-4x"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:payments' %}'">
-            <div class="card text-white bg-info shadow-lg" style="height: 150px; cursor: pointer;">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                    <div>
-                        <h5 class="card-title">Total Payments</h5>
-                        <h2 class="card-text">${{ total_payments }}</h2>
-                    </div>
-                    <i class="fas fa-dollar-sign fa-4x"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:overdue-rentals-report' %}'">
-            <div class="card text-white bg-danger shadow-lg" style="height: 150px; cursor: pointer;">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                    <div>
-                        <h5 class="card-title">Pending Payment</h5>
-                        <h2 class="card-text">{{ overdue_tenants }}</h2>
-                    </div>
-                    <i class="fas fa-exclamation-circle fa-4x"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:monthly-reports' %}'">
-            <div class="card text-white bg-info shadow-lg" style="height: 150px; cursor: pointer;">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                    <div>
-                        <h5 class="card-title">Revenue This Month</h5>
-                        <h2 class="card-text">${{ revenue_this_month }}</h2>
-                    </div>
-                    <i class="fas fa-chart-line fa-4x"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:credit-balances-report' %}'">
-            <div class="card text-white bg-secondary shadow-lg" style="height: 150px; cursor: pointer;">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                    <div>
-                        <h5 class="card-title">Total Credit Balance</h5>
-                        <h2 class="card-text">${{ total_credit_balance }}</h2>
-                    </div>
-                    <i class="fas fa-money-check-alt fa-4x"></i>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4 mb-4" onclick="window.location.href='{% url 'rentals:payments' %}'">
-            <div class="card text-white bg-success shadow-lg" style="height: 150px; cursor: pointer;">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                    <div>
-                        <h5 class="card-title">Total Collected Today</h5>
-                        <h2 class="card-text">${{ payments_today }}</h2>
-                    </div>
-                    <i class="fas fa-calendar-day fa-4x"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Summary Charts Section -->
     <div class="row">
-        <!-- Payment Trends -->
         <div class="col-md-6 mb-4">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white">Payment Trends</div>
+            <div class="card shadow">
                 <div class="card-body">
+                    <h5 class="card-title">Payment Trends</h5>
                     <canvas id="paymentTrendsChart"></canvas>
                 </div>
             </div>
         </div>
-
-        <!-- Payment Method Distribution -->
         <div class="col-md-6 mb-4">
-            <div class="card shadow-lg">
-                <div class="card-header bg-success text-white">Payment Method Distribution</div>
+            <div class="card shadow">
                 <div class="card-body">
+                    <h5 class="card-title">Payment Method Distribution</h5>
                     <canvas id="paymentMethodChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Tenant Credit Balances -->
         <div class="col-md-6 mb-4">
-            <div class="card shadow-lg">
-                <div class="card-header bg-warning text-white">Tenant Credit Balances</div>
+            <div class="card shadow">
                 <div class="card-body">
-                    <canvas id="tenantCreditChart"></canvas>
+                    <h5 class="card-title">Tenant Credit Balances</h5>
+                    <canvas id="tenantCreditBalancesChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Payment Status Overview -->
         <div class="col-md-6 mb-4">
-            <div class="card shadow-lg">
-                <div class="card-header bg-danger text-white">Payment Status Overview</div>
+            <div class="card shadow">
                 <div class="card-body">
-                    <canvas id="paymentStatusChart"></canvas>
+                    <h5 class="card-title">Payment Status Overview</h5>
+                    <canvas id="paymentStatusOverviewChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Include Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // 1. Payment Trends
-    const paymentTrendsCtx = document.getElementById('paymentTrendsChart').getContext('2d');
-    new Chart(paymentTrendsCtx, {
-        type: 'line',
-        data: {
-            labels: {{ payment_trends.months|safe }},
-            datasets: [{
-                label: 'Total Rent Collected',
-                data: {{ payment_trends.totals|safe }},
-                borderColor: '#007bff',
-                backgroundColor: 'rgba(0, 123, 255, 0.2)',
-                tension: 0.4
-            }]
-        }
-    });
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Payment Trends Chart
+        var paymentTrendsCtx = document.getElementById('paymentTrendsChart').getContext('2d');
+        var paymentTrendsChart = new Chart(paymentTrendsCtx, {
+            type: 'line',
+            data: {
+                labels: {{ payment_trends.months|safe }},
+                datasets: [{
+                    label: 'Payment Trends',
+                    data: {{ payment_trends.totals|safe }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
 
-    // 2. Payment Method Distribution
-    const paymentMethodCtx = document.getElementById('paymentMethodChart').getContext('2d');
-    new Chart(paymentMethodCtx, {
-        type: 'pie',
-        data: {
-            labels: {{ payment_method_distribution.labels|safe }},
-            datasets: [{
-                data: {{ payment_method_distribution.values|safe }},
-                backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
-            }]
-        }
-    });
+        // Payment Method Distribution Chart
+        var paymentMethodCtx = document.getElementById('paymentMethodChart').getContext('2d');
+        var paymentMethodChart = new Chart(paymentMethodCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ payment_method_distribution.labels|safe }},
+                datasets: [{
+                    label: 'Payment Method Distribution',
+                    data: {{ payment_method_distribution.values|safe }},
+                    backgroundColor: ['rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)', 'rgba(255, 206, 86, 0.2)'],
+                    borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)'],
+                    borderWidth: 1
+                }]
+            }
+        });
 
-    // 3. Tenant Credit Balances
-    const tenantCreditCtx = document.getElementById('tenantCreditChart').getContext('2d');
-    new Chart(tenantCreditCtx, {
-        type: 'bar',
-        data: {
-            labels: {{ tenant_credit_balances.names|safe }},
-            datasets: [{
-                label: 'Credit Balance',
-                data: {{ tenant_credit_balances.balances|safe }},
-                backgroundColor: '#ffc107',
-            }]
-        }
-    });
-
-    // 4. Payment Status Overview
-    const paymentStatusCtx = document.getElementById('paymentStatusChart').getContext('2d');
-    new Chart(paymentStatusCtx, {
-        type: 'pie',
-        data: {
-            labels: {{ payment_status_overview.labels|safe }},
-            datasets: [{
-                data: {{ payment_status_overview.values|safe }},
-                backgroundColor: ['#28a745', '#dc3545'],
-            }]
-        }
-    });
-</script>
+        // Tenant Credit Balances Chart
+        var tenantCreditCtx = document.getElementById('tenantCreditBalancesChart').getContext('2d');
+        var tenantCreditChart = new Chart(tenantCreditCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ tenant_credit_balances.names|safe }},
+                datasets: [{
+                    label: 'Credit Balance',
+                    data: {{ tenant_credit_balances.balances|safe }},
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
 {% endblock %}
+
+
+

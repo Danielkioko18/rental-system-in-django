@@ -16,6 +16,15 @@ from reportlab.pdfgen import canvas
 from django.db import IntegrityError
 
 
+from django.db.models import Count, Sum
+from django.db.models.functions import TruncMonth
+from datetime import date
+from decimal import Decimal
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import TemplateView
+
+# Assuming Tenant, House, Payment, and CreditBalancesReportView are already imported.
+
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard.html'
 
@@ -26,59 +35,37 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['total_tenants'] = Tenant.objects.count()
         context['total_houses'] = House.objects.count()
         context['vacant_houses'] = House.objects.filter(is_occupied=False).count()
-        context['pending_payments'] = sum(tenant.outstanding_balance() for tenant in Tenant.objects.all() 
-                                        if tenant.outstanding_balance() > 0
-                                    )
-        
+        context['pending_payments'] = sum(tenant.outstanding_balance() for tenant in Tenant.objects.all() if tenant.outstanding_balance() > 0)
         context['total_payments'] = Payment.objects.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
-        
-        context['overdue_tenants'] = sum(
-            1 for tenant in Tenant.objects.all() 
-            if tenant.outstanding_balance() > 0
-        )
-        context['revenue_this_month'] = Payment.objects.filter(
-            payment_date__year=date.today().year,
-            payment_date__month=date.today().month
-        ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
-
-          # Get total credit balance from CreditBalancesReportView
+        context['overdue_tenants'] = sum(1 for tenant in Tenant.objects.all() if tenant.outstanding_balance() > 0)
+        context['revenue_this_month'] = Payment.objects.filter(payment_date__year=date.today().year, payment_date__month=date.today().month).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
         context['total_credit_balance'] = CreditBalancesReportView.get_total_credit_balance()[0]
-
         context['payments_today'] = Payment.objects.filter(payment_date=date.today()).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+
         # Data for charts
         # 1. Payment Trends
-        monthly_payments = Payment.objects.annotate(month=TruncMonth('payment_date')).values('month').annotate(
-            total=Sum('amount_paid')).order_by('month')
+        monthly_payments = Payment.objects.annotate(month=TruncMonth('payment_date')).values('month').annotate(total=Sum('amount_paid')).order_by('month')
         context['payment_trends'] = {
             'months': [data['month'].strftime('%b %Y') for data in monthly_payments],
             'totals': [float(data['total']) for data in monthly_payments],
         }
 
         # 2. Payment Method Distribution
-        payment_methods = Payment.objects.values('payment_method').annotate(
-            count=Count('id')
-        )
+        payment_methods = Payment.objects.values('payment_method').annotate(count=Count('id'))
         context['payment_method_distribution'] = {
             'labels': [method['payment_method'].capitalize() for method in payment_methods],
             'values': [method['count'] for method in payment_methods],
         }
 
-        '''# 3. Tenant Credit Balances
-        top_credit_tenants = CreditBalancesReportView.get_total_credit_balance.().order_by('-credit_balance')[:10]
+        # 3. Tenant Credit Balances
+        _, tenants_with_credit = CreditBalancesReportView.get_total_credit_balance()
+        top_credit_tenants = sorted(tenants_with_credit, key=lambda x: x['credit_balance'], reverse=True)[:10]
         context['tenant_credit_balances'] = {
-            'names': [tenant.name for tenant in top_credit_tenants],
-            'balances': [float(tenant.credit_balance) for tenant in top_credit_tenants],
+            'names': [tenant['name'] for tenant in top_credit_tenants],
+            'balances': [float(tenant['credit_balance']) for tenant in top_credit_tenants],
         }
 
-        # 4. Payment Status Overview
-        paid_payments = Payment.objects.filter(is_overdue=False).count()
-        overdue_payments = Payment.objects.filter(is_overdue=True).count()
-        context['payment_status_overview'] = {
-            'labels': ['Paid', 'Overdue'],
-            'values': [paid_payments, overdue_payments],
-        }
 
-        '''
         return context
 
 
