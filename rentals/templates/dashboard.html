@@ -204,8 +204,6 @@
         });
     
 
-        console.log("Payment Status Overview Labels:", {{ payment_status_overview.labels|safe }});
-        console.log("Payment Status Overview Values:", {{ payment_status_overview.values|safe }});
         var paymentStatusCtx = document.getElementById('paymentStatusOverviewChart').getContext('2d');
         var paymentStatusChart = new Chart(paymentStatusCtx, {
             type: 'pie',

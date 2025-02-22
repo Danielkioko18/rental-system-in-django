@@ -16,14 +16,6 @@ from reportlab.pdfgen import canvas
 from django.db import IntegrityError
 
 
-from django.db.models import Count, Sum
-from django.db.models.functions import TruncMonth
-from datetime import date
-from decimal import Decimal
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import TemplateView
-
-# Assuming Tenant, House, Payment, and CreditBalancesReportView are already imported.
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard.html'
