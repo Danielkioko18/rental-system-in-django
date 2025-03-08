@@ -18,7 +18,10 @@ from django.views.generic import ListView
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
+from django.views.generic import UpdateView
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
+from .forms import ProfileUpdateForm
 
 
 
