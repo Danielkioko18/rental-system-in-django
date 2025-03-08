@@ -14,6 +14,11 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 from django.db import IntegrityError
+from django.views.generic import ListView
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.urls import reverse_lazy
+from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 
 
 
@@ -423,3 +428,52 @@ class SettingsView(LoginRequiredMixin, TemplateView):
         )
 
         return redirect('rentals:settings')
+    
+
+
+
+User = get_user_model()
+
+class UserManagementView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = User
+    template_name = 'users.html'
+    context_object_name = 'users'
+
+    def test_func(self):
+        # Only superusers can access this page
+        return self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_superuser'] = self.request.user.is_superuser
+        return context
+
+    def post(self, request, *args, **kwargs):
+        # Handle adding a new user
+        if 'add_user' in request.POST:
+            username = request.POST.get('username')
+            email = request.POST.get('email')
+            password = request.POST.get('password')
+
+            if not (username and email and password):
+                messages.error(request, 'All fields are required.')
+            else:
+                # Create the user
+                try:
+                    User.objects.create_user(
+                        username=username,
+                        email=email,
+                        password=password
+                    )
+                    messages.success(request, 'User added successfully!')
+                except Exception as e:
+                    messages.error(request, f'Error adding user: {str(e)}')
+
+        # Handle deleting a user
+        elif 'delete_user' in request.POST:
+            user_id = request.POST.get('user_id')
+            user = get_object_or_404(User, id=user_id)
+            user.delete()
+            messages.success(request, 'User deleted successfully!')
+
+        return redirect('rentals:users')
