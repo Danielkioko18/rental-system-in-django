@@ -2,7 +2,7 @@ from datetime import date
 from django.utils.dateparse import parse_date
 from django.db.models import Sum, Count
 from decimal import Decimal
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404, render
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import HouseType, House, Tenant, Payment
@@ -480,3 +480,42 @@ class UserManagementView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             messages.success(request, 'User deleted successfully!')
 
         return redirect('rentals:users')
+
+
+class ProfileView(LoginRequiredMixin, UpdateView):
+    model = User  # Use your custom User model
+    form_class = ProfileUpdateForm  # Form for updating profile details
+    template_name = 'profile.html'  # Template for the profile page
+    success_url = reverse_lazy('profile')  # Redirect to the profile page after updating
+
+    def get_object(self, queryset=None):
+        # Return the currently logged-in user
+        return self.request.user
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add the password change form to the context
+        context['password_form'] = PasswordChangeForm(user=self.request.user)
+        return context
+
+    def post(self, request, *args, **kwargs):
+        # Handle profile update
+        if 'update_profile' in request.POST:
+            return super().post(request, *args, **kwargs)
+
+        # Handle password change
+        elif 'change_password' in request.POST:
+            password_form = PasswordChangeForm(user=request.user, data=request.POST)
+            if password_form.is_valid():
+                user = password_form.save()
+                # Update the session to prevent the user from being logged out
+                update_session_auth_hash(request, user)
+                messages.success(request, 'Your password has been updated successfully!')
+                return redirect('rentals:profile')
+            else:
+                # If the form is invalid, re-render the profile page with errors
+                context = self.get_context_data()
+                context['password_form'] = password_form
+                return render(request, self.template_name, context)
+
+        return super().post(request, *args, **kwargs)

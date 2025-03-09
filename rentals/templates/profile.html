@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>My Profile</h2>
+
+    <!-- Profile Update Form -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title">Update Profile</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" name="update_profile" class="btn btn-success">Update Profile</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Change Password Form -->
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h5 class="card-title">Change Password</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ password_form.as_p }}
+                <button type="submit" name="change_password" class="btn btn-warning">Change Password</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
