@@ -22,7 +22,7 @@ from django.views.generic import UpdateView
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from .forms import ProfileUpdateForm
-
+from django.contrib.auth.models import User
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -383,7 +383,6 @@ class CreditBalancesReportView(LoginRequiredMixin, TemplateView):
 
 
 
-
 class OverdueRentalsReportView(LoginRequiredMixin, TemplateView):
     template_name = 'overdue-rentals-report.html'
 
@@ -482,40 +481,60 @@ class UserManagementView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return redirect('rentals:users')
 
 
-class ProfileView(LoginRequiredMixin, UpdateView):
-    model = User  # Use your custom User model
-    form_class = ProfileUpdateForm  # Form for updating profile details
-    template_name = 'profile.html'  # Template for the profile page
-    success_url = reverse_lazy('profile')  # Redirect to the profile page after updating
-
-    def get_object(self, queryset=None):
-        # Return the currently logged-in user
-        return self.request.user
+class MyProfileView(LoginRequiredMixin, TemplateView):
+    template_name = 'profile.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Add the password change form to the context
-        context['password_form'] = PasswordChangeForm(user=self.request.user)
+        context['user'] = self.request.user  # Pass the logged-in user to the template
+        return context
+    
+
+class UpdateProfileView(LoginRequiredMixin, TemplateView):
+    template_name = 'update_profile.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['user'] = self.request.user  # Pass the logged-in user to the template
         return context
 
     def post(self, request, *args, **kwargs):
-        # Handle profile update
-        if 'update_profile' in request.POST:
-            return super().post(request, *args, **kwargs)
+        user = request.user
+        user.username = request.POST.get('username')
+        user.first_name = request.POST.get('first_name')
+        user.last_name = request.POST.get('last_name')
+        user.email = request.POST.get('email')
+        user.save()
+        messages.success(request, 'Your profile has been updated!')
+        return redirect('rentals:profile')
 
-        # Handle password change
-        elif 'change_password' in request.POST:
-            password_form = PasswordChangeForm(user=request.user, data=request.POST)
-            if password_form.is_valid():
-                user = password_form.save()
-                # Update the session to prevent the user from being logged out
-                update_session_auth_hash(request, user)
-                messages.success(request, 'Your password has been updated successfully!')
-                return redirect('rentals:profile')
-            else:
-                # If the form is invalid, re-render the profile page with errors
-                context = self.get_context_data()
-                context['password_form'] = password_form
-                return render(request, self.template_name, context)
 
-        return super().post(request, *args, **kwargs)
+class ChangePasswordView(LoginRequiredMixin, TemplateView):
+    template_name = 'change_password.html'
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        old_password = request.POST.get('old_password')
+        new_password1 = request.POST.get('new_password1')
+        new_password2 = request.POST.get('new_password2')
+
+        # Validate the old password
+        if not user.check_password(old_password):
+            messages.error(request, 'Your old password was entered incorrectly. Please try again.')
+            return redirect('change_password')
+
+        # Validate the new passwords
+        if new_password1 != new_password2:
+            messages.error(request, 'The new passwords do not match.')
+            return redirect('change_password')
+
+        # Update the password
+        user.set_password(new_password1)
+        user.save()
+
+        # Keep the user logged in
+        update_session_auth_hash(request, user)
+
+        # Display success message and redirect
+        messages.success(request, 'Your password has been updated!')
+        return redirect('rentals:profile')
