@@ -1,34 +1,17 @@
+<!-- authentication/templates/authentication/profile.html -->
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container">
-    <h2>My Profile</h2>
-
-    <!-- Profile Update Form -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="card-title">Update Profile</h5>
-        </div>
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit" name="update_profile" class="btn btn-success">Update Profile</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Change Password Form -->
+<div class="container mt-5">
+    <h1 class="mb-4">Profile</h1>
     <div class="card">
-        <div class="card-header bg-info text-white">
-            <h5 class="card-title">Change Password</h5>
-        </div>
         <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                {{ password_form.as_p }}
-                <button type="submit" name="change_password" class="btn btn-warning">Change Password</button>
-            </form>
+            <p class="card-text"><strong>Username:</strong> {{ user.username }}</p>
+            <p class="card-text"><strong>First Name:</strong> {{ user.first_name }}</p>
+            <p class="card-text"><strong>Last Name:</strong> {{ user.last_name }}</p>
+            <p class="card-text"><strong>Email:</strong> {{ user.email }}</p>
+            <a href="" class="btn btn-primary">Update Profile</a>
+            <a href="" class="btn btn-warning">Change Password</a>
         </div>
     </div>
 </div>
