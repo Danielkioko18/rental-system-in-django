@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-g-o#i#f8)-(w(0@3$)8reodltpz=!j1f0xj#fjsupwud8-#bb@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['rental-management-system-demo.onrender.com', 'localhost',]
 
 
 # Application definition
@@ -76,7 +76,7 @@ WSGI_APPLICATION = 'rentalmanagement.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
+'''
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -86,6 +86,14 @@ DATABASES = {
         'HOST': config('DATABASE_HOST', default='localhost'),
         'PORT': config('DATABASE_PORT', default=5432),
     }
+}'''
+
+DATABASES = {
+    'default': dj_database_url.config(
+        default=config("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
 
 
