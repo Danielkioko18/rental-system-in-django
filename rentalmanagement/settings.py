@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-g-o#i#f8)-(w(0@3$)8reodltpz=!j1f0xj#fjsupwud8-#bb@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['rental-management-system-demo.onrender.com', 'localhost',]
+ALLOWED_HOSTS = ['kiokopythonprojects.pythonanywhere.com', 'localhost','127.0.0.1']
 
 
 # Application definition
@@ -89,11 +89,10 @@ DATABASES = {
 }'''
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=config("DATABASE_URL"),
-        conn_max_age=600,
-        ssl_require=True
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 
