@@ -148,6 +148,6 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 LOGIN_REDIRECT_URL = 'rentals:dashboard'
-
+LOGIN_URL = 'auth:login'
 LOGOUT_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = 'login'
+
