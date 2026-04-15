@@ -10,9 +10,11 @@
     {% load static %}
     <style>
         body {
+            margin: 0;
             font-family: Arial, sans-serif;
         }
         .sidebar {
+            width: 250px;
             height: 100vh; /* Full height */
             position: fixed;
             top: 0;
@@ -27,6 +29,9 @@
         .sidebar .nav-link:hover {
             color: #fff;
             background-color: #495057; /* Highlight on hover */
+        }
+        .sidebar .nav-link.active {
+            font-weight: 600;
         }
         .sidebar .logo {
             text-align: center;
@@ -43,7 +48,7 @@
             padding: 15px;
             position: fixed;
             top: 0;
-            left: 225px; /* Start where the sidebar ends */
+            left: 250px; /* Start where the sidebar ends */
             right: 0;
             z-index: 1030;
         }
@@ -60,38 +65,40 @@
         <div class="logo">
             <img src="{% static "images/logo.png" %}" alt="Logo">
         </div>
+        {% with current=request.resolver_match.url_name %}
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="nav-link" href="{% url "rentals:dashboard" %}"><i class="fas fa-tachometer-alt fa-1x"></i> Dashboard</a>
+                <a class="nav-link {% if current == 'dashboard' %}active{% endif %}" href="{% url "rentals:dashboard" %}"><i class="fas fa-tachometer-alt fa-1x"></i> Dashboard</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url "rentals:houses" %}"><i class="fas fa-home fa-1x"></i> Houses</a>
+                <a class="nav-link {% if current == 'houses' %}active{% endif %}" href="{% url "rentals:houses" %}"><i class="fas fa-home fa-1x"></i> Houses</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url "rentals:tenants" %}"><i class="fas fa-users fa-1x"></i> Tenants</a>
+                <a class="nav-link {% if current == 'tenants' %}active{% endif %}" href="{% url "rentals:tenants" %}"><i class="fas fa-users fa-1x"></i> Tenants</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url "rentals:payments" %}"><i class="fas fa-dollar-sign fa-1x"></i> Payments</a>
+                <a class="nav-link {% if current == 'payments' %}active{% endif %}" href="{% url "rentals:payments" %}"><i class="fas fa-dollar-sign fa-1x"></i> Payments</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url "rentals:reports" %}"><i class="fas fa-book fa-1x"></i> Reports</a>
+                <a class="nav-link {% if current == 'reports' %}active{% endif %}" href="{% url "rentals:reports" %}"><i class="fas fa-book fa-1x"></i> Reports</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url "rentals:settings" %}"><i class="fas fa-cog fa-1x"></i> Settings</a>
+                <a class="nav-link {% if current == 'settings' %}active{% endif %}" href="{% url "rentals:settings" %}"><i class="fas fa-cog fa-1x"></i> Settings</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url "rentals:users" %}"><i class="fas fa-users fa-1x"></i> Users</a>
+                <a class="nav-link {% if current == 'users' %}active{% endif %}" href="{% url "rentals:users" %}"><i class="fas fa-users fa-1x"></i> Users</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url "rentals:profile" %}"><i class="fas fa-user fa-1x"></i> My Profile</a>
+                <a class="nav-link {% if current == 'profile' %}active{% endif %}" href="{% url "rentals:profile" %}"><i class="fas fa-user fa-1x"></i> My Profile</a>
             </li>
             <li class="nav-item">
                 <form method="post" action="{% url 'auth:logout' %}" style="display: inline;">
                     {% csrf_token %}
-                    <button type="submit" class="nav-link" style="background: none; border: none; padding: 0; color: inherit; text-decoration: none;"> <i class="fas fa-door-open fa-1x"></i> Logout</button>
+                    <button type="submit" class="nav-link" style="background: none; border: 1px; padding: none; color: red; text-decoration: none;">↪️Logout</button>
                 </form>
             </li>
         </ul>
+        {% endwith %}
     </nav>
 
     <!-- Header -->

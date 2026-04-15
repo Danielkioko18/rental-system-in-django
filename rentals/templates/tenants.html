@@ -59,7 +59,7 @@
                 {% for tenant in tenants %}
                 <tr>
                     <td>{{ forloop.counter }}</td>
-                    <td>{{ tenant.name }}</td>
+                    <td>{{ tenant.name|title }}</td>
                     <td>{{ tenant.phone }}</td>
                     <td>{{ tenant.house.number }}</td>
                     <td>${{ tenant.outstanding_balance }}</td>

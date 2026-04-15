@@ -78,13 +78,14 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         return context
 
-
+# add/manage houses
 class HousesView(LoginRequiredMixin, TemplateView):
     template_name = 'houses.html'
 
+    # Fetch all houses and house types to display in the template
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['houses'] = House.objects.all()  # Fetch all houses
+        context['houses'] = House.objects.all().order_by('number')  # Fetch all houses sorted by number
         context['house_types'] = HouseType.objects.all()  # Fetch all house types
         return context
 
@@ -108,18 +109,27 @@ class HousesView(LoginRequiredMixin, TemplateView):
             house.number = house_number
             house.house_type = house_type_name
             house.monthly_rent = monthly_rent
-            house.save()
+            try:
+                house.save()
+                messages.success(request, 'House updated successfully.')
+            except IntegrityError:
+                messages.error(request, f'A house with number "{house_number}" already exists. Please use a unique house number.')
         else:  # Add operation
-            House.objects.create(
-                number=house_number,
-                house_type=house_type_name,
-                monthly_rent=monthly_rent,
-                is_occupied=False,
-            )
+            try:
+                House.objects.create(
+                    number=house_number,
+                    house_type=house_type_name,
+                    monthly_rent=monthly_rent,
+                    is_occupied=False,
+                )
+                messages.success(request, f'House {house_number} added successfully.')
+            except IntegrityError:
+                messages.error(request, f'A house with number "{house_number}" already exists. Please use a unique house number.')
 
         return redirect('rentals:houses')
 
 
+# add/manage tenants
 class TenantsView(LoginRequiredMixin, TemplateView):
     template_name = 'tenants.html'
 
@@ -177,7 +187,7 @@ class TenantsView(LoginRequiredMixin, TemplateView):
 
         return redirect('rentals:tenants')
 
-
+#payments  view
 class PaymentsView(LoginRequiredMixin, TemplateView):
     template_name = 'payments.html'
 
@@ -227,6 +237,7 @@ class PaymentsView(LoginRequiredMixin, TemplateView):
         return redirect('rentals:payments')
 
 
+#reports page views
 class ReportsView(LoginRequiredMixin, TemplateView):
     template_name = 'reports.html'
 
@@ -235,6 +246,7 @@ class ReportsView(LoginRequiredMixin, TemplateView):
         return context
 
 
+#monthly reports view
 class MonthlyReportsView(LoginRequiredMixin, TemplateView):
     template_name = 'monthly-reports.html'
 

@@ -13,7 +13,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from decouple import config
 from pathlib import Path
 import dj_database_url
-import os 
+import os
+from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -151,3 +152,9 @@ LOGIN_REDIRECT_URL = 'rentals:dashboard'
 LOGIN_URL = 'auth:login'
 LOGOUT_REDIRECT_URL = '/'
 
+MESSAGE_TAGS = {
+    messages.ERROR: 'danger',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.INFO: 'info',
+}
