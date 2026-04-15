@@ -16,18 +16,18 @@
                 <option value="" disabled selected>Select Tenant</option>
                 {% for tenant in tenants %}
                 <option value="{{ tenant.id }}" data-house="{{ tenant.house.number }}">
-                    {{ tenant.name }}
+                    {{ tenant.name|title }}
                 </option>
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-2" style="display: none;">
             <label for="houseNumber" class="form-label">House Number</label>
             <input type="text" class="form-control" id="houseNumber" name="house_number" readonly>
         </div>
         <div class="col-md-2">
             <label for="paymentDate" class="form-label">Payment Date</label>
-            <input type="date" class="form-control" id="paymentDate" name="payment_date" required>
+            <input type="date" class="form-control" id="paymentDate" name="payment_date" max="{% now 'Y-m-d' %}" required>
         </div>
         <div class="col-md-2">
             <label for="amountPaid" class="form-label">Amount Paid</label>
@@ -65,7 +65,7 @@
                 {% for payment in payments %}
                 <tr>
                     <th scope="row">{{ forloop.counter }}</th>
-                    <td>{{ payment.tenant.name }}</td>
+                    <td>{{ payment.tenant.name|title }}</td>
                     <td>{{ payment.tenant.house.number }}</td>
                     <td>{{ payment.payment_date }}</td>
                     <td>${{ payment.amount_paid }}</td>

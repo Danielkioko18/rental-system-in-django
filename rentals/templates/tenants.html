@@ -24,7 +24,7 @@
                 <option value="" disabled selected>Select House</option>
                 {% for house in houses %}
                 <option value="{{ house.number }}">
-                    House {{ house.number }}
+                    House {{ house.number|title }}
                 </option>
                 {% endfor %}
             </select>

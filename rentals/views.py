@@ -187,10 +187,12 @@ class TenantsView(LoginRequiredMixin, TemplateView):
 
         return redirect('rentals:tenants')
 
-#payments  view
+
+# add/manage payments  views
 class PaymentsView(LoginRequiredMixin, TemplateView):
     template_name = 'payments.html'
 
+    # Fetch all tenants and payments to display in the template
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         tenants = Tenant.objects.all()
@@ -204,6 +206,7 @@ class PaymentsView(LoginRequiredMixin, TemplateView):
         context['total_collected'] = Payment.objects.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
         return context
 
+    # Handle add/edit/delete operations for payments
     def post(self, request, *args, **kwargs):
         if 'delete_payment' in request.POST:
             payment_id = request.POST.get('payment_id')
@@ -279,12 +282,14 @@ class MonthlyReportsView(LoginRequiredMixin, TemplateView):
 
         return context
 
+    # Override the get method to handle PDF generation when the 'generate_pdf' GET parameter is provided
     def get(self, request, *args, **kwargs):
         # If the 'generate_pdf' GET parameter is provided, generate the PDF
         if 'generate_pdf' in request.GET:
             return self.generate_pdf_report(request)
         return super().get(request, *args, **kwargs)
 
+    # Method to generate PDF report for monthly payments
     def generate_pdf_report(self, request):
         # Get the month and year parameters from the GET request
         month = request.GET.get('month')
@@ -362,14 +367,17 @@ class MonthlyReportsView(LoginRequiredMixin, TemplateView):
         return response
 
 
+#credit balances report view
 class CreditBalancesReportView(LoginRequiredMixin, TemplateView):
     template_name = 'credit-balances-report.html'
 
+    # Class method to calculate total credit balance and list of tenants with credit balances
     @classmethod
     def get_total_credit_balance(cls):
         total_credit_balance = Decimal('0.00')
         tenants_with_credit = []  # List to store tenants with credit balances
 
+        # Loop through all tenants to calculate their credit balances
         for tenant in Tenant.objects.all():
             total_paid = Payment.objects.filter(tenant=tenant).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
             months_since_joining = (date.today().year - tenant.date_joined.year) * 12 + date.today().month - tenant.date_joined.month
@@ -386,6 +394,7 @@ class CreditBalancesReportView(LoginRequiredMixin, TemplateView):
 
         return total_credit_balance, tenants_with_credit  # Return both total balance and list of tenants
 
+    # Override the get_context_data method to include total credit balance and tenants with credit balances in the context
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         total_credit_balance, tenants_with_credit = self.get_total_credit_balance()  # Call the method
@@ -394,10 +403,11 @@ class CreditBalancesReportView(LoginRequiredMixin, TemplateView):
         return context
 
 
-
+# overdue rentals report view
 class OverdueRentalsReportView(LoginRequiredMixin, TemplateView):
     template_name = 'overdue-rentals-report.html'
 
+    # Override the get_context_data method to include tenants with outstanding balances in the context
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
@@ -405,6 +415,7 @@ class OverdueRentalsReportView(LoginRequiredMixin, TemplateView):
         tenants_with_outstanding_balance = []
         total_overdue_balance = Decimal('0.00')  # Initialize total overdue balance
 
+        # Loop through all tenants to check for outstanding balances
         for tenant in Tenant.objects.all():
             outstanding_balance = tenant.outstanding_balance()
             if outstanding_balance > 0:
@@ -422,15 +433,17 @@ class OverdueRentalsReportView(LoginRequiredMixin, TemplateView):
         return context
 
 
-
+# settings page view
 class SettingsView(LoginRequiredMixin, TemplateView):
     template_name = 'settings.html'
 
+    # Override the get_context_data method to include house types in the context
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['house_types'] = HouseType.objects.all()
         return context
 
+    # Override the post method to handle updates to house types
     def post(self, request, *args, **kwargs):
         house_type_name = request.POST.get('house_type')
         monthly_rent = request.POST.get('monthly_rent')
@@ -445,9 +458,10 @@ class SettingsView(LoginRequiredMixin, TemplateView):
     
 
 
-
+# user management view
 User = get_user_model()
 
+# View for managing users (only accessible by superusers)
 class UserManagementView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     model = User
     template_name = 'users.html'
@@ -493,6 +507,7 @@ class UserManagementView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return redirect('rentals:users')
 
 
+# my user profile view
 class MyProfileView(LoginRequiredMixin, TemplateView):
     template_name = 'profile.html'
 
@@ -502,6 +517,7 @@ class MyProfileView(LoginRequiredMixin, TemplateView):
         return context
     
 
+# update user profile view
 class UpdateProfileView(LoginRequiredMixin, TemplateView):
     template_name = 'update_profile.html'
 
@@ -510,6 +526,7 @@ class UpdateProfileView(LoginRequiredMixin, TemplateView):
         context['user'] = self.request.user  # Pass the logged-in user to the template
         return context
 
+    # Override the post method to handle profile updates
     def post(self, request, *args, **kwargs):
         user = request.user
         user.username = request.POST.get('username')
@@ -520,7 +537,7 @@ class UpdateProfileView(LoginRequiredMixin, TemplateView):
         messages.success(request, 'Your profile has been updated!')
         return redirect('rentals:profile')
 
-
+# change password view
 class ChangePasswordView(LoginRequiredMixin, TemplateView):
     template_name = 'change_password.html'
 

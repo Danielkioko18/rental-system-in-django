@@ -68,28 +68,28 @@
         {% with current=request.resolver_match.url_name %}
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="nav-link {% if current == 'dashboard' %}active{% endif %}" href="{% url "rentals:dashboard" %}"><i class="fas fa-tachometer-alt fa-1x"></i> Dashboard</a>
+                <a class="nav-link {% if current == 'dashboard' %}active{% endif %}" href="{% url "rentals:dashboard" %}"> 📊 Dashboard</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if current == 'houses' %}active{% endif %}" href="{% url "rentals:houses" %}"><i class="fas fa-home fa-1x"></i> Houses</a>
+                <a class="nav-link {% if current == 'houses' %}active{% endif %}" href="{% url "rentals:houses" %}"> 🏘️ Houses</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if current == 'tenants' %}active{% endif %}" href="{% url "rentals:tenants" %}"><i class="fas fa-users fa-1x"></i> Tenants</a>
+                <a class="nav-link {% if current == 'tenants' %}active{% endif %}" href="{% url "rentals:tenants" %}"> 👥 Tenants</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if current == 'payments' %}active{% endif %}" href="{% url "rentals:payments" %}"><i class="fas fa-dollar-sign fa-1x"></i> Payments</a>
+                <a class="nav-link {% if current == 'payments' %}active{% endif %}" href="{% url "rentals:payments" %}">💲Payments</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if current == 'reports' %}active{% endif %}" href="{% url "rentals:reports" %}"><i class="fas fa-book fa-1x"></i> Reports</a>
+                <a class="nav-link {% if current == 'reports' %}active{% endif %}" href="{% url "rentals:reports" %}">  📈 Reports</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if current == 'settings' %}active{% endif %}" href="{% url "rentals:settings" %}"><i class="fas fa-cog fa-1x"></i> Settings</a>
+                <a class="nav-link {% if current == 'settings' %}active{% endif %}" href="{% url "rentals:settings" %}"> ⚙️ Settings</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if current == 'users' %}active{% endif %}" href="{% url "rentals:users" %}"><i class="fas fa-users fa-1x"></i> Users</a>
+                <a class="nav-link {% if current == 'users' %}active{% endif %}" href="{% url "rentals:users" %}"> 🧑‍💻 Users</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if current == 'profile' %}active{% endif %}" href="{% url "rentals:profile" %}"><i class="fas fa-user fa-1x"></i> My Profile</a>
+                <a class="nav-link {% if current == 'profile' %}active{% endif %}" href="{% url "rentals:profile" %}">👤My Profile</a>
             </li>
             <li class="nav-item">
                 <form method="post" action="{% url 'auth:logout' %}" style="display: inline;">
