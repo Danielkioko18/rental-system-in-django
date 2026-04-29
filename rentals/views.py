@@ -78,6 +78,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         return context
 
+
 # add/manage houses
 class HousesView(LoginRequiredMixin, TemplateView):
     template_name = 'houses.html'
